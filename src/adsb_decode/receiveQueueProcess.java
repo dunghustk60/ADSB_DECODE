@@ -4,15 +4,12 @@
  */
 package adsb_decode;
 
-import static adsb_decode.ADSB_UDPReceiver.TestDataSentInList;
-import static adsb_decode.ADSB_UDPReceiver.messages;
-import static adsb_decode.ADSB_UDPReceiver.queueSend;
-import static adsb_decode.ADSB_UDPReceiver.recordssentList;
-import static adsb_decode.ADSB_UDPReceiver.testPos;
-import static adsb_decode.ADSB_UDPReceiver.testPoshi;
+
+import com.attech.cat21.util.BitwiseUtils;
 import com.attech.cat21.v210.Cat21Decoder;
 import com.attech.cat21.v210.Cat21Message;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -25,17 +22,79 @@ import java.util.logging.Logger;
  */
 public class receiveQueueProcess implements Runnable {
     Queue<byte[]> queueRecceive = new LinkedList<>();
-    final static List<Cat21Message> messages = new ArrayList<>();
+    final List<Cat21Message> messages = new ArrayList<>();
+    final List<RecordsSent> recordssentList = new ArrayList<>();
+    Queue<RecordsSent> queueSend = new LinkedList<>();
+
+              
     
-    public receiveQueueProcess(Queue<byte[]> q) {
+    public receiveQueueProcess(Queue<byte[]> q, Queue<RecordsSent> qs) {
         queueRecceive = q;
+        queueSend = qs;
+    }
+    
+    // Kiem tra xem record data da co trong list chua
+    public  boolean TestDataSentInList(byte data[]) {
+        boolean found = false;
+        
+        // Xoa nhung cai da cu di truoc
+        for(int i = 0 ; i < recordssentList.size() ; i ++) {
+            long start = recordssentList.get(i).startTime;
+            long endTime = System.nanoTime()/1000;
+            long elapsedTime = endTime - start;
+            if( elapsedTime > 5000000 ) {
+                recordssentList.remove(i);
+                System.out.println("REMOVE==========================================================================================================");
+            } 
+        }
+        
+        // Kiem tra
+        // Can loai bo SIC/SAC
+        for(int i = 0 ; i < recordssentList.size() ; i ++) {
+            RecordsSent rcs = recordssentList.get(i);
+            byte[] pos = rcs.pos;
+            byte[] poshisres = rcs.poshires;
+            byte[] dt = rcs.data;
+            found = Arrays.equals(data, recordssentList.get(i).data);
+            if(found)
+                break;
+        }
+        
+        return found;
+    }
+     //---------------------------------------------------------
+    //
+    //
+    //---------------------------------------------------------
+    
+    public  void testPos(byte[] bytes) {
+        int index = 0;
+     
+        byte[] latBytes = new byte[]{bytes[index++], bytes[index++], bytes[index++]};
+        int value = BitwiseUtils.convertFrom2sComplementNumber(latBytes);
+        double lat = value * 2.145767 * 0.00001;
+
+        latBytes = new byte[]{bytes[index++], bytes[index++], bytes[index++]};
+        value = BitwiseUtils.convertFrom2sComplementNumber(latBytes);
+        double lon = value * 2.145767 * 0.00001;
+    }
+        
+    public  void testPoshi(byte[] bytes) {
+        int index = 0;
+    
+        int value = ((bytes[index++] & 0xFF) << 24) | ((bytes[index++] & 0xFF) << 16) | ((bytes[index++] & 0xFF) << 8) | (bytes[index++] & 0xFF);
+        double lat = value * 0.00000016764;
+        
+        value = ((bytes[index++] & 0xFF) << 24) | ((bytes[index++] & 0xFF) << 16) | ((bytes[index++] & 0xFF) << 8) | (bytes[index++] & 0xFF);
+        double lon = value * 0.0000001676;
+    
     }
     //-------------------------------------------------------
     //
     //
     //
     //------------------------------------------------------- 
-    public static void ProcessMessage() {
+    public  void ProcessMessage() {
 
         //recordssentList.clear();
         System.out.println("++++++> Xy ly dien trong queue so messages=" + Integer.toString(messages.size()));

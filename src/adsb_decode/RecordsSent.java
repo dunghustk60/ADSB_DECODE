@@ -22,10 +22,11 @@ public class RecordsSent {
      
     public void add_data(Cat21Message cat21Decoded) {
         byte[] d = cat21Decoded.getBytes();
-        data = new byte[d.length];
+        this.data = new byte[d.length];
         
         System.arraycopy(cat21Decoded.positionByte, 0, pos, 0, pos.length);
         System.arraycopy(cat21Decoded.hirespositionByte, 0, poshires, 0, poshires.length);
+        System.arraycopy(d, 0, this.data , 0, d.length);
         
         startTime = System.nanoTime()/1000;     // Thoi diem add
     }
