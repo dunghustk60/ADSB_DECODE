@@ -7,6 +7,12 @@ package adsb_decode;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,6 +21,9 @@ import java.util.logging.Logger;
  * @author tranduc
  */
 public class Main {
+    
+    static final List<RecordsSent> queueSend = new ArrayList<>();
+    static final List<RecordsSent> recordsSentList = new ArrayList<>();
     
     
     public static void Read() {
@@ -30,14 +39,16 @@ public class Main {
     }
     
     public static void main(String[] args) {
-        // Create an instance of MyRunnable
-        receiveThread receiverthread = new receiveThread();
-        // Create a thread and pass the runnable instance to it
-        Thread thread = new Thread(receiverthread);
-        // Start the thread
-        thread.start();
         
-        ADSB_Receiver adsb_receiver_thread =  new ADSB_Receiver("Thread 20000","10.10.1.6",20000);
+//        Read();
+//                
+//        receiveThread receiverthread = new receiveThread();
+//        Thread thread = new Thread(receiverthread);
+//        thread.start();
+        
+        ADSB_Receiver adsb_receiver_thread =  new ADSB_Receiver("Thread 20000","192.168.22.158",20000,1,queueSend,recordsSentList);
+        adsb_receiver_thread.SetMulticastParam("224.1.1.1", 23456, "localhost");
+        
         Thread threadrcv = new Thread(adsb_receiver_thread);
         threadrcv.start();
 
@@ -47,6 +58,7 @@ public class Main {
         threadrcv1.start();
         */
         
+        /*
         while(true) {
           System.out.println("MAIN is running!");
             try {
@@ -55,6 +67,6 @@ public class Main {
                 Logger.getLogger(receiveThread.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
-
+        */
     }
 }

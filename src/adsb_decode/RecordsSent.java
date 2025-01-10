@@ -12,10 +12,12 @@ import com.attech.cat21.v210.Cat21Message;
  */
 public class RecordsSent {
     
-     
+     // version va data dung de conver
+    
+     private int verion;    // 1 = 1.3 ; 2 = 2.1 ; 3 = 2.4
      long startTime;
      public int targetAddress;
-     public byte data[] = null;
+     public byte data[] = null;         // data asterix cat 21 duoc forwarn tu may thu
      byte[] pos = new byte[6];
      byte[] poshires= new byte[8];
      public String Callsign;
@@ -29,6 +31,20 @@ public class RecordsSent {
         System.arraycopy(d, 0, this.data , 0, d.length);
         
         startTime = System.nanoTime()/1000;     // Thoi diem add
+    }
+
+    /**
+     * @return the verion
+     */
+    public int getVerion() {
+        return verion;
+    }
+
+    /**
+     * @param verion the verion to set
+     */
+    public void setVerion(int verion) {
+        this.verion = verion;
     }
     
     

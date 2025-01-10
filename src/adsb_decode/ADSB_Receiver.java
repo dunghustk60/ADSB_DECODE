@@ -11,41 +11,69 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ADSB_Receiver implements Runnable {
   
- 
-    final  Queue<byte[]> queueRecceive = new LinkedList<>();
-    final  Queue<RecordsSent> queueSend = new LinkedList<>();
- 
-    final  List<Cat21Message> messages = new ArrayList<>();
+    final Queue<byte[]> queueRecceive = new LinkedList<>();
+   
+    final List<Cat21Message> messages = new ArrayList<>();
     
-    String thread_name = "";
+    List<RecordsSent> queueSend = new ArrayList<>();
+    List<RecordsSent> recordsSentList = new ArrayList<>();
+      
+    int mode;
     
-    String ip = "10.10.1.14";
-    int port = 20000;  // Cổng lắng nghe
+    String ip = "10.10.1.6";
+    int port = 20000; 
        
+    private MulticastSocket msocket;
+    private DatagramSocket socket = null;
     
-       //---------------------------------------------------------
+    Thread threadTx = null;
+    Thread threadRx = null;
+    
+//---------------------------------------------------------
     //
     //
     //---------------------------------------------------------
-    public ADSB_Receiver(String thname, String ipadd, int pport) {
-        thread_name = thname;
+    public ADSB_Receiver(String thname, String ipadd, int pport,int mode,  List<RecordsSent> qS, List<RecordsSent> rSL) {
         this.ip = ipadd;
         this.port = pport;
+        this.mode = mode;
+        
+        this.queueSend = qS;
+        recordsSentList = rSL;
+        
+        SendData senddata = new SendData(qS);
+        threadTx = new Thread(senddata);
+      
+       
+        receiveQueueProcess receiveProcess = new receiveQueueProcess(queueRecceive,qS,rSL);
+        threadRx = new Thread(receiveProcess);
+        
+        
+        
+    }
+    
+    String mcastadd = "239.1.1.123";
+    int mport = 20000;
+    String bindIpAddress = "10.10.1.6";
+
+    public void SetMulticastParam(String maddr,int mp,String bindip) {
+        this.mcastadd = maddr;
+        this.mport = mp;
+        this.bindIpAddress = bindip;
+        
     }
     
     
+    
     //---------------------------------------------------------
     //
     //
     //---------------------------------------------------------
-
-    
-    
-   
-    
     /*
     public static void ProcessMessage() {
         
@@ -213,27 +241,30 @@ public class ADSB_Receiver implements Runnable {
         this.msocket.close();
     }
     */
-    public void receiveUDP() {
+    //--------------------------------------------------------------------
+    //
+    //
+    //--------------------------------------------------------------------
+    public void receiveUnicast() {
         int debug = 0;
       
         
         //String ip = "192.168.22.178";
-        DatagramSocket socket = null;
         
-        asterixCat21 cat21 = new asterixCat21();
+        
+        //asterixCat21 cat21 = new asterixCat21();
         
         SendData senddata = new SendData(queueSend);
         Thread threadTx = new Thread(senddata);
         threadTx.start();
         
-        receiveQueueProcess receiveProcess = new receiveQueueProcess(queueRecceive,queueSend);
+        receiveQueueProcess receiveProcess = new receiveQueueProcess(queueRecceive,queueSend,recordsSentList);
         Thread threadRx = new Thread(receiveProcess);
         threadRx.start();
         
         try {
             // Tạo một DatagramSocket và gắn với cổng 20000
             //socket = new DatagramSocket(port, InetAddress.getByName("192.168.22.178"));
-
                       
             socket = new DatagramSocket(port, InetAddress.getByName(ip));
             
@@ -245,6 +276,84 @@ public class ADSB_Receiver implements Runnable {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 // Nhận gói dữ liệu UDP
                 socket.receive(receivePacket);
+
+                byte[] receivedData = receivePacket.getData();
+//                int length = (receivePacket.getData()[1] & 0xFF) << 8 | (receivePacket.getData()[2] & 0xFF);
+                int length = receivePacket.getLength();
+                // XOA SAU KHI DUNG
+                asterixData = new byte[length];
+                System.arraycopy(receivedData, 0, asterixData, 0, length);
+                queueRecceive.offer(asterixData);
+//                if (length > 0) {
+//                    asterixData = new byte[length];
+//                    System.arraycopy(receivedData, 0, asterixData, 0, length);
+//                    queueRecceive.offer(asterixData);
+//                }
+                
+                
+                //cat21.Decode(receivedData,length);
+                
+// DUNG DE DEBUG                
+                debug ++;
+                if(debug == 10) {
+                    debug = 0;
+                }
+                
+                //System.out.println("=====> Receiver queue has elements : " + Integer.toString(queueRecceive.size()) );
+                /*
+                messages.clear();
+                int aaa = Cat21Decoder.decode1(asterixData, messages);
+                ProcessMessage();
+                System.out.println("=====> Sau khi decode CAT 21, tong decode bytes =" + Integer.toString(aaa) + " so messages=" + Integer.toString(messages.size()) + " TARGET LIST" + Integer.toString(recordssentList.size()) );
+                */
+                
+
+//                ByteArrayInputStream byteStream = new ByteArrayInputStream(b);
+//                DataInputStream dataStream = new DataInputStream(byteStream);
+//                int len = dataStream.readInt();
+//                        
+//                 System.out.println(Integer.toString(length) + " " + Integer.toString(asterixData[0]) + " " + Integer.toString(len));
+                // Bạn có thể xử lý dữ liệu tại đây
+            }
+        } catch (IOException e) {
+        } finally {
+            if (socket != null && !socket.isClosed()) {
+                socket.close();  // Đảm bảo đóng socket khi hoàn thành
+            }
+        }
+    }
+    //--------------------------------------------------------------------
+    //
+    //
+    //--------------------------------------------------------------------
+    public void receiveMultiCast() {
+        int debug = 0;
+             
+        System.out.println("DIA CHI MCAST = " + mcastadd + " PORT + " + Integer.toString(mport) + " NIC: " +  bindIpAddress);
+        
+        try {
+            // Create a MulticastSocket and bind it to the specific interface (IP address)
+            InetAddress localAddress = InetAddress.getByName(bindIpAddress);
+            msocket = new MulticastSocket(mport);
+            msocket.setInterface(localAddress);                 // Bind to the NIC by IP
+            InetAddress group = InetAddress.getByName(mcastadd);
+            // Join the multicast group
+            msocket.joinGroup(group);
+
+        } catch (IOException ex) {
+            Logger.getLogger(ADSB_Receiver.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        try {
+                       
+            byte[] receiveData = new byte[4096];  // Buffer để nhận dữ liệu
+            byte[] asterixData; 
+            System.out.println("Server đang lắng nghe tại Multicast " + mcastadd +":" + mport);
+            
+            while (true) {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                // Nhận gói dữ liệu MULTICAST
+                msocket.receive(receivePacket);
 
                 byte[] receivedData = receivePacket.getData();
                 
@@ -280,19 +389,29 @@ public class ADSB_Receiver implements Runnable {
             }
         } catch (IOException e) {
         } finally {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();  // Đảm bảo đóng socket khi hoàn thành
+            if (msocket != null && !socket.isClosed()) {
+                msocket.close();  // Đảm bảo đóng socket khi hoàn thành
             }
         }
     }
     
+    //--------------------------------------------------------------------
+    //
+    //
+    //--------------------------------------------------------------------
     
     @Override
     public void run() {
+        threadTx.start();
+        threadRx.start();
         
-        receiveUDP();
-        
+        if(this.mode == 1) {
+            receiveUnicast();
+        } else {
+            receiveMultiCast();
+        }
     }
 }
+
 
 /* EOF */

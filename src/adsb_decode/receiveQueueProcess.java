@@ -8,11 +8,15 @@ package adsb_decode;
 import com.attech.cat21.util.BitwiseUtils;
 import com.attech.cat21.v210.Cat21Decoder;
 import com.attech.cat21.v210.Cat21Message;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,13 +26,14 @@ import java.util.logging.Logger;
  */
 public class receiveQueueProcess implements Runnable {
     Queue<byte[]> queueRecceive = new LinkedList<>();
+    
     final List<Cat21Message> messages = new ArrayList<>();
-    final List<RecordsSent> recordssentList = new ArrayList<>();
-    Queue<RecordsSent> queueSend = new LinkedList<>();
-
+    static List<RecordsSent> queueSend = new ArrayList<>();
+  
+    List<RecordsSent> recordssentList = new ArrayList<>();
               
     
-    public receiveQueueProcess(Queue<byte[]> q, Queue<RecordsSent> qs) {
+    public receiveQueueProcess(Queue<byte[]> q, List<RecordsSent> qs, List<RecordsSent> recordssentList) {
         queueRecceive = q;
         queueSend = qs;
     }
@@ -42,7 +47,7 @@ public class receiveQueueProcess implements Runnable {
             long start = recordssentList.get(i).startTime;
             long endTime = System.nanoTime()/1000;
             long elapsedTime = endTime - start;
-            if( elapsedTime > 5000000 ) {
+            if( elapsedTime > 15000000 ) {
                 recordssentList.remove(i);
                 System.out.println("REMOVE==========================================================================================================");
             } 
@@ -120,13 +125,30 @@ public class receiveQueueProcess implements Runnable {
             if (!TestDataSentInList(data)) {
                 System.out.println("CHUA CO NEN SEND TO CLIENT");
                 rcs.add_data(cat21Decoded);
+                rcs.setVerion(3);
                 recordssentList.add(rcs);
-                queueSend.offer(rcs);
+                queueSend.add(rcs);
+            } else {
+                String tmp = rcs.Callsign  + " -> DA CO NEN KHONG SEND TO CLIENT ";
+                WireToFile(tmp + "\r\n");
+                
+                System.out.println(tmp);
             }
 
         }
 
     }
+    
+    private void WireToFile(String s) {
+        String file ="adsb.log";
+        try ( BufferedWriter write = new BufferedWriter(new FileWriter(file,true))) {
+            write.write(s);
+        
+        } catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
     //-------------------------------------------------------
     //
     //
