@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,8 +21,11 @@ public class ADSB_Receiver implements Runnable {
    
     final List<Cat21Message> messages = new ArrayList<>();
     
-    List<RecordsSent> queueSend = new ArrayList<>();
-    List<RecordsSent> recordsSentList = new ArrayList<>();
+    //List<RecordsSent> queueSend = new ArrayList<>();
+    
+    //List<RecordsSent> queueSend = null;
+    BlockingQueue<RecordsSent> queueSend = null;
+    List<RecordsSent> recordsSentList = null;
       
     int mode;
     
@@ -38,7 +42,7 @@ public class ADSB_Receiver implements Runnable {
     //
     //
     //---------------------------------------------------------
-    public ADSB_Receiver(String thname, String ipadd, int pport,int mode,  List<RecordsSent> qS, List<RecordsSent> rSL) {
+    public ADSB_Receiver(String thname, String ipadd, int pport,int mode,  BlockingQueue<RecordsSent> qS, List<RecordsSent> rSL) {
         this.ip = ipadd;
         this.port = pport;
         this.mode = mode;

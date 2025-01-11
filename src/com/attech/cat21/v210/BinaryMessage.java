@@ -17,18 +17,30 @@ import java.util.List;
  * @author dung
  */
 public class BinaryMessage {
-
+    private int NUMBER_OF_MAX_ITEM = 49;
     private byte binaryMessage[];
     private Cat21Message cat21Message;
 
-    private byte[][] bytes2D = new byte[48][];
-    private boolean[] header = new boolean[48];
+    private byte[][] bytes2D = new byte[NUMBER_OF_MAX_ITEM][];
+    private boolean[] header = new boolean[NUMBER_OF_MAX_ITEM];
+    private int soLuongHeader = 0;
+
+    public int getSoLuongHeader() {
+        return soLuongHeader;
+    }
+
+    public void setSoLuongHeader(int soLuongHeader) {
+        this.soLuongHeader = soLuongHeader;
+    }
+    
+    
 
     public boolean checkField1() {
         if ((this.cat21Message.getSic() != null && this.cat21Message.getSac() != null)
                 || this.cat21Message.getTargetDescriptor() != null || this.cat21Message.getTrackNumber() != null
                 || this.cat21Message.getServiceIdentification() != null || this.cat21Message.getTimeOfAplicabilityPosition() != null
                 || this.cat21Message.getPosition() != null || this.cat21Message.getHighResolutionPosition() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -39,6 +51,7 @@ public class BinaryMessage {
                 || this.cat21Message.getAirSpeed() != null || this.cat21Message.getTrueAirSpeed() != null
                 || this.cat21Message.getTargetAddress() != null || this.cat21Message.getTimeOfMessageReceptionOfPosition() != null
                 || this.cat21Message.getTimeOfMessageReceptionOfPositionHightPrecisions() != null || this.cat21Message.getTimeOfMessageReceptionOfVelocity() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -49,6 +62,7 @@ public class BinaryMessage {
                 || this.cat21Message.getGeometricHeight() != null || this.cat21Message.getQualityIndicator() != null
                 || this.cat21Message.getMopsVersion() != null || this.cat21Message.getMode3a() != null
                 || this.cat21Message.getRollAgle() != null || this.cat21Message.getFlightLevel() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -59,6 +73,7 @@ public class BinaryMessage {
                 || this.cat21Message.getTargetStatus() != null || this.cat21Message.getBarometricVerticalRate() != null
                 || this.cat21Message.getGeometricVerticalRate() != null || this.cat21Message.getAirborneGroundVector() != null
                 || this.cat21Message.getTrackAngleRate() != null || this.cat21Message.getTimeOfReportTranmission() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -69,6 +84,7 @@ public class BinaryMessage {
                 || this.cat21Message.getEmitterCategory() != null || this.cat21Message.getMetInformation() != null
                 || this.cat21Message.getSelectedAltitude() != null || this.cat21Message.getFinalStateSelectedAltitude() != null
                 || this.cat21Message.getTracjectoryIntent() != null || this.cat21Message.getServiceManagement() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -79,6 +95,7 @@ public class BinaryMessage {
                 || this.cat21Message.getSurfaceCapabilitiesAndCharacterics() != null || this.cat21Message.getMessageAmplitude() != null
                 || this.cat21Message.getModeSMBData() != null || this.cat21Message.getaCASResolutionAdvisoryReport() != null
                 || this.cat21Message.getReceiverId() != null || this.cat21Message.getDataAges() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -86,6 +103,7 @@ public class BinaryMessage {
 
     public boolean checkField7() {
         if (this.cat21Message.getReservedExpansionFieldLength() != null || this.cat21Message.getSpecialPurposeFieldLength() != null) {
+            soLuongHeader++;
             return true;
         }
         return false;
@@ -169,13 +187,13 @@ public class BinaryMessage {
             }
 
             // 7 --------------------------------------------------- I021/131 Position in WGS-84 co-ordinates, high res  ----> done
+        }else{
+            return null;
         }
 
         byte h2 = 0x00;
         if (checkField2()) {
             h1 |= 0x01;
-            bytes2D[7] = new byte[]{0};
-            header[7] = true;
             bytes.add(0, h1);
 
             if (this.cat21Message.getTimeOfAplicabilityVelocity() != null) {
@@ -184,8 +202,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x80;
-                bytes2D[8] = bts;
-                header[8] = true;
+                bytes2D[7] = bts;
+                header[7] = true;
             }
 
             // 8 -------------- I021/072 Time of Applicability for Velocity ----> done
@@ -195,8 +213,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x40;
-                bytes2D[9] = bts;
-                header[9] = true;
+                bytes2D[8] = bts;
+                header[8] = true;
             }
 
             // 9 ---------------  I021/150 Air Speed -----> done
@@ -206,8 +224,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x20;
-                bytes2D[10] = bts;
-                header[10] = true;
+                bytes2D[9] = bts;
+                header[9] = true;
 
             }
             // 10 ------------------------------- I021/151 True Air Speed --------> done
@@ -217,8 +235,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x10;
-                bytes2D[11] = bts;
-                header[11] = true;
+                bytes2D[10] = bts;
+                header[10] = true;
             }
 
             // 11 --------------------------------- I021/080 Target Address ------> done
@@ -228,8 +246,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x08;
-                bytes2D[12] = bts;
-                header[12] = true;
+                bytes2D[11] = bts;
+                header[11] = true;
             }
 
             // 12 --------------------------- I021/073 Time of Message Reception of Position ----> done 
@@ -239,8 +257,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x04;
-                bytes2D[13] = bts;
-                header[13] = true;
+                bytes2D[12] = bts;
+                header[12] = true;
 
             }
 
@@ -251,10 +269,13 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h2 |= 0x02;
-                bytes2D[14] = bts;
-                header[14] = true;
+                bytes2D[13] = bts;
+                header[13] = true;
             }
             // 14 ----------------------------- I021/075 Time of Message Reception of Velocity ---------> done
+
+        }else{
+            bytes.add(0, h1);
 
         }
 
@@ -263,9 +284,6 @@ public class BinaryMessage {
         if (checkField3()) {
 
             h2 |= 0x01;
-            bytes2D[15] = new byte[]{0};
-            header[15] = true;
-
             bytes.add(1, h2);
 
             if (this.cat21Message.getTimeOfMessageReceptionOfVelocityHightPrecision() != null) {
@@ -274,8 +292,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x80;
-                bytes2D[16] = bts;
-                header[16] = true;
+                bytes2D[14] = bts;
+                header[14] = true;
 
             }
 
@@ -286,8 +304,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x40;
-                bytes2D[17] = bts;
-                header[17] = true;
+                bytes2D[15] = bts;
+                header[15] = true;
             }
 
             // 16 ----------------------------- Data Item I021/140, Geometric Height ----------> done
@@ -297,8 +315,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x20;
-                bytes2D[18] = bts;
-                header[18] = true;
+                bytes2D[16] = bts;
+                header[16] = true;
             }
 
             // 17 ----------------------------------- Data Item I021/090, Quality Indicators ---------> done
@@ -308,8 +326,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x10;
-                bytes2D[19] = bts;
-                header[19] = true;
+                bytes2D[17] = bts;
+                header[17] = true;
 
             }
 
@@ -323,8 +341,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x08;
-                bytes2D[20] = bts;
-                header[20] = true;
+                bytes2D[18] = bts;
+                header[18] = true;
             }
             // 19 --------------------------------------- Mode 3/A Code --------------------> done
 
@@ -334,8 +352,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x04;
-                bytes2D[21] = bts;
-                header[21] = true;
+                bytes2D[19] = bts;
+                header[19] = true;
             }
             // 20 -------------------------------------------- I021/230 Roll Angle ---------------> done
 
@@ -345,19 +363,19 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h3 |= 0x02;
-                bytes2D[22] = bts;
-                header[22] = true;
+                bytes2D[20] = bts;
+                header[20] = true;
             }
             //21 ------------------------------ I021/230 Roll Angle -----------------------------------> done 
 
+        }else{
+            bytes.add(1, h2);
         }
 
         byte h4 = 0x00;
 
         if (checkField4()) {
             h3 |= 0x01;
-            bytes2D[23] = new byte[]{0};
-            header[23] = true;
 
             bytes.add(2, h3);
 
@@ -367,8 +385,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x80;
-                bytes2D[24] = bts;
-                header[24] = true;
+                bytes2D[21] = bts;
+                header[21] = true;
             }
             //22 ------------------------------ I021/152 Magnetic Heading ------------> done
 
@@ -378,8 +396,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x40;
-                bytes2D[25] = bts;
-                header[25] = true;
+                bytes2D[22] = bts;
+                header[22] = true;
 
             }
             //23 ------------------------------ Data Item I021/200, Target Status -----> done
@@ -389,8 +407,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x20;
-                bytes2D[26] = bts;
-                header[26] = true;
+                bytes2D[23] = bts;
+                header[23] = true;
 
             }
             //24 ------------------------------ I021/155 Barometric Vertical Rate --------> done
@@ -400,8 +418,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x10;
-                bytes2D[27] = bts;
-                header[27] = true;
+                bytes2D[24] = bts;
+                header[24] = true;
 
             }
             //25 ------------------------------ I021/157 Geometric Vertical Rate -----> done
@@ -412,8 +430,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x08;
-                bytes2D[28] = bts;
-                header[28] = true;
+                bytes2D[25] = bts;
+                header[25] = true;
 
             }
             //26 ------------------------------ Data Item I021/160, Airborne Ground Vector -----> done
@@ -424,8 +442,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x04;
-                bytes2D[29] = bts;
-                header[29] = true;
+                bytes2D[26] = bts;
+                header[26] = true;
             }
             //27 ------------------------------  Data Item I021/165, Track Angle Rate ----> done
             if (this.cat21Message.getTimeOfReportTranmission() != null) {
@@ -435,33 +453,35 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h4 |= 0x02;
-                bytes2D[30] = bts;
-                header[30] = true;
+                bytes2D[27] = bts;
+                header[27] = true;
             }
             //28 ------------------------------ Data Item I021/077, Time of ASTERIX Report Transmission. done
+        }else{
+            bytes.add(2, h3);
         }
 
         byte h5 = 0x00;
         if (checkField5()) {
             h4 |= 0x01;
-            bytes2D[31] = new byte[]{0};
-            header[31] = true;
+            
             bytes.add(3, h4);
+            
             if (this.cat21Message.getCallSign() != null) {
                 byte[] bts = encodeCallSign(this.cat21Message.getCallSign());
                 for (int i = 0; i < bts.length; i++) {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x80;
-                bytes2D[32] = bts;
-                header[32] = true;
+                bytes2D[28] = bts;
+                header[28] = true;
             }
             //29 ------------------------------ I021/170 Target Identification --------------> done
             if (this.cat21Message.getEmitterCategory() != null) {
                 bytes.add((byte) (this.cat21Message.getEmitterCategory() & 0xFF));
                 h5 |= 0x40;
-                bytes2D[33] = new byte[]{(byte) (this.cat21Message.getEmitterCategory() & 0xFF)};
-                header[33] = true;
+                bytes2D[29] = new byte[]{(byte) (this.cat21Message.getEmitterCategory() & 0xFF)};
+                header[29] = true;
             }
 
             // 30 ------------------------------------ I021/020 Emitter Category ------------------> done
@@ -471,8 +491,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x20;
-                bytes2D[34] = bts;
-                header[34] = true;
+                bytes2D[30] = bts;
+                header[30] = true;
             }
             // 31 ------------------------------------ I021/220 Met Information ---------------------> done
             if (this.cat21Message.getSelectedAltitude() != null) {
@@ -481,8 +501,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x10;
-                bytes2D[35] = bts;
-                header[35] = true;
+                bytes2D[31] = bts;
+                header[31] = true;
 
             }
             // 32 ------------------------------------------------ I021/146 Selected Altitude ------->  done
@@ -492,8 +512,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x08;
-                bytes2D[36] = bts;
-                header[36] = true;
+                bytes2D[32] = bts;
+                header[32] = true;
 
             }
             // 33 ------------------------------------------------ I021/148 Final State Selected Altitude ------------>   done
@@ -503,8 +523,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x04;
-                bytes2D[37] = bts;
-                header[37] = true;
+                bytes2D[33] = bts;
+                header[33] = true;
             }
             // 34 ------------------------------------------------ I021/110 Trajectory Intent -------> done
             if (this.cat21Message.getServiceManagement() != null) {
@@ -513,17 +533,17 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h5 |= 0x02;
-                bytes2D[38] = bts;
-                header[38] = true;
+                bytes2D[34] = bts;
+                header[34] = true;
             }
             // 35 --------------------------------- I021/016 Service Management ------------> done
+        }else{
+            bytes.add(3, h4);
         }
 
         byte h6 = 0x00;
         if (checkField6()) {
             h5 |= 0x01;
-            bytes2D[39] = new byte[]{0};
-            header[39] = true;
 
             bytes.add(4, h5);
 
@@ -533,8 +553,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x80;
-                bytes2D[40] = bts;
-                header[40] = true;
+                bytes2D[35] = bts;
+                header[35] = true;
 
             }
 //         36 ---------------------------------- I021/008 Aircraft Operational Status ---------> done
@@ -544,8 +564,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x40;
-                bytes2D[41] = bts;
-                header[41] = true;
+                bytes2D[36] = bts;
+                header[36] = true;
             }
             // 37 ------------------------------------- I021/271 Surface Capabilities and Characteristics  --------> done
             if (this.cat21Message.getMessageAmplitude() != null) {
@@ -554,8 +574,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x20;
-                bytes2D[42] = bts;
-                header[42] = true;
+                bytes2D[37] = bts;
+                header[37] = true;
             }
 
             // 38------------------------------ I021/132 Message Amplitude ------------> done
@@ -565,8 +585,8 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x10;
-                bytes2D[43] = bts;
-                header[43] = true;
+                bytes2D[38] = bts;
+                header[38] = true;
             }
             // 39 ---------------- I021/295 Data Ages ------------> done
             if (this.cat21Message.getaCASResolutionAdvisoryReport() != null) {
@@ -575,16 +595,16 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x08;
-                bytes2D[44] = bts;
-                header[44] = true;
+                bytes2D[39] = bts;
+                header[39] = true;
 
             }
             // 40 ---------------- I021/260 ACAS Resolution Advisory Report 
             if (this.cat21Message.getReceiverId() != null) {
                 bytes.add((byte) (this.cat21Message.getReceiverId() & 0xFF));
                 h6 |= 0x04;
-                bytes2D[45] = new byte[]{(byte) (this.cat21Message.getReceiverId() & 0xFF)};
-                header[45] = true;
+                bytes2D[40] = new byte[]{(byte) (this.cat21Message.getReceiverId() & 0xFF)};
+                header[40] = true;
             }
             // 41 ------------------------------ I021/400 Receiver ID ----------------------> done
             if (this.cat21Message.getDataAges() != null) {
@@ -593,35 +613,40 @@ public class BinaryMessage {
                     bytes.add(bts[i]);
                 }
                 h6 |= 0x02;
-                bytes2D[46] = bts;
-                header[46] = true;
+                bytes2D[41] = bts;
+                header[41] = true;
                 // 42 ------------------------------------- I021/295 Data Ages. done
 
             }
            
 
+        }else{
+            bytes.add(4, h5);
         }
         byte h7 = (byte) 0x00;
         if (checkField7()) {
             h6 |= 0x01;
-            bytes2D[47] = new byte[]{0};
-            header[47] = true;
             bytes.add(5, h6);
             
             
             if(this.cat21Message.getReservedExpansionFieldLength() != null){
                 bytes.add((byte)(this.cat21Message.getReservedExpansionFieldLength().byteValue()));
                 h7 |= 0x04;
+                
+                bytes2D[47] = new byte[]{this.cat21Message.getReservedExpansionFieldLength().byteValue()};
+                header[47] = true;
             }
-            if(this.cat21Message.getReservedExpansionFieldLength() != null){
-                bytes.add((byte)(this.cat21Message.getReservedExpansionFieldLength().byteValue()));
+            if(this.cat21Message.getSpecialPurposeFieldLength() != null){
+                bytes.add((byte)(this.cat21Message.getSpecialPurposeFieldLength().byteValue()));
                 h7 |= 0x02;
+                
+                bytes2D[48] = new byte[]{this.cat21Message.getSpecialPurposeFieldLength().byteValue()};
+                header[48] = true;
+                
             }
             
             bytes.add(6, h7);
         }else{
-            bytes2D[47] = new byte[]{0};
-            header[47] = false;
             bytes.add(5, h6);
         }
         
@@ -649,6 +674,32 @@ public class BinaryMessage {
         }
         return content;
     }
+
+    public int getNUMBER_OF_MAX_ITEM() {
+        return NUMBER_OF_MAX_ITEM;
+    }
+
+    public void setNUMBER_OF_MAX_ITEM(int NUMBER_OF_MAX_ITEM) {
+        this.NUMBER_OF_MAX_ITEM = NUMBER_OF_MAX_ITEM;
+    }
+
+    public byte[][] getBytes2D() {
+        return bytes2D;
+    }
+
+    public void setBytes2D(byte[][] bytes2D) {
+        this.bytes2D = bytes2D;
+    }
+
+    public boolean[] getHeader() {
+        return header;
+    }
+
+    public void setHeader(boolean[] header) {
+        this.header = header;
+    }
+    
+    
 
     public static byte[] encodeACASResolutionAdvisoryReport(ASCASResolutionAdvisoryReport aSCASResolutionAdvisoryReport) {
         byte bytes[] = new byte[7];

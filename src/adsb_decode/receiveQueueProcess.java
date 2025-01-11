@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,12 +29,12 @@ public class receiveQueueProcess implements Runnable {
     Queue<byte[]> queueRecceive = new LinkedList<>();
     
     final List<Cat21Message> messages = new ArrayList<>();
-    static List<RecordsSent> queueSend = new ArrayList<>();
-  
+//    static List<RecordsSent> queueSend = new ArrayList<>();
+    BlockingQueue<RecordsSent> queueSend = null;
     List<RecordsSent> recordssentList = new ArrayList<>();
               
     
-    public receiveQueueProcess(Queue<byte[]> q, List<RecordsSent> qs, List<RecordsSent> recordssentList) {
+    public receiveQueueProcess(Queue<byte[]> q, BlockingQueue<RecordsSent> qs, List<RecordsSent> recordssentList) {
         queueRecceive = q;
         queueSend = qs;
     }

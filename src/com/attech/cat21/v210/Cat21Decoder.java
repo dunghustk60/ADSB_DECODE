@@ -842,9 +842,19 @@ public class Cat21Decoder {
         targerDescriptor.setIsLocalDecodingPositionJump(bValue);
         
         bValue = (byteHigh & 0x02) > 0;
-        targerDescriptor.setIsRangeCheck(bValue);
+        targerDescriptor.setIsRangeCheckFail(bValue);
+        // Check extention
+        isEnd = (byteHigh & 0x01) == 0;
+        if (isEnd) return 3;
+        // add 27 Dec 2024
+        int r = 3;
+        while(true){
+            r++;
+            isEnd = (bytes[index++] & 0x01) == 0;
+            if(isEnd) break;
+        }
+        return r;
         
-        return 3;
     }
     
     private static int skipTargetReportDescriptor(byte[] bytes, int index) {

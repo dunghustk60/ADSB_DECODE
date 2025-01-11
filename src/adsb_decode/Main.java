@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.logging.Level;
@@ -22,9 +23,9 @@ import java.util.logging.Logger;
  */
 public class Main {
     
-    static final List<RecordsSent> queueSend = new ArrayList<>();
+//    static final List<RecordsSent> queueSend = new ArrayList<>();
     static final List<RecordsSent> recordsSentList = new ArrayList<>();
-    
+    static final BlockingQueue<RecordsSent> queueSend = new LinkedBlockingDeque<>();
     
     public static void Read() {
         String filePath = "config.cfg"; // Replace with your file path

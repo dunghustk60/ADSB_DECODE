@@ -10,8 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,9 +30,10 @@ public class SendData implements Runnable {
     int dichSai = 0;
     int countMessage = 0;
     UDPSender udpSend = null;
-    private List<RecordsSent> queueSend;
+    //private List<RecordsSent> queueSend;
 
-    public SendData(List<RecordsSent> q) {
+    BlockingQueue<RecordsSent> queueSend = null;
+    public SendData(BlockingQueue<RecordsSent> q) {
 
         queueSend = q;
         udpSend = new UDPSender();
@@ -80,64 +83,133 @@ public class SendData implements Runnable {
         Files.write(path, byteArray, StandardOpenOption.APPEND);
     }
 
+    public void checkNullData() {
+        for (int j = 0; j < queueSend.size(); j++) {
+            RecordsSent rcS = queueSend.peek();
+            if(rcS.data == null){
+                System.out.println(" nul;fdgsdgdsfg");
+            }
+        }
+                
+                
+    }    
+    
     public void gopGoiphatdivaxoa(int i) throws IOException, InterruptedException {
-        try {
+//        try {
             byte[] msg = new byte[len + 3];
             msg[0] = 21;
             msg[1] = (byte) (msg.length >> 8);
             msg[2] = (byte) (msg.length & 0xFF);
             int temp = 3;
+            checkNullData();
             for (int j = 0; j < i; j++) {
                 countMessage++;
-                RecordsSent rcS = queueSend.get(j);
+//                RecordsSent rcS = queueSend.get(j);
 
-                BinaryMessage binaryMessage = new BinaryMessage(rcS.getMsg());
+//                BinaryMessage binaryMessage = new BinaryMessage(rcS.getMsg());
 
-                byte[] goc = rcS.data;
-                byte[] dich = binaryMessage.getBinaryMessage();
-
-                if (goc.length == dich.length) {
-                    int dau = 0;
-                    for (int t = 0; t < goc.length; t++) {
-                        if (goc[i] != dich[i]) {
-                            dau = 1;
-                            dichSai++;
-                            System.out.println("Dich sai content----------------------------------------------------" + dichSai);
-                            break;
-                        }
-
-                    }
-                    if (dau == 0) {
-                        dichDung++;
-                        System.out.println("True ------------------" +dichDung);
-                    }
-                } else {
-                    dichSai++;
-                    System.out.println("Dich sai length " + dichSai);
-                }
-                
-                int lengTemp = rcS.data.length;
-                System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
-                temp += lengTemp;
+//                byte[] goc = rcS.data;
+////                byte[] dich = binaryMessage.getBinaryMessage();
+//                byte[] dich = new byte[rcS.data.length];
+//                int t = binaryMessage.getSoLuongHeader();
+//                for(int k = 0; k < t; k++){
+//                    dich[k] = binaryMessage.getBinaryMessage()[k];
+//                }
+//                for(int k = 0; k < binaryMessage.getHeader().length; k++){
+//                    if(binaryMessage.getHeader()[k]){
+//                        System.arraycopy(binaryMessage.getBytes2D()[k], 0, dich, t, binaryMessage.getBytes2D()[k].length);
+//                        t+=binaryMessage.getBytes2D()[k].length;
+//                    }
+//                }
+//                if (goc.length == dich.length) {
+//                    int dau = 0;
+//                    for (int z = 0; z < goc.length; z++) {
+//                        if (goc[i] != dich[i]) {
+//                            dau = 1;
+//                            dichSai++;
+//                            System.out.println("Dich sai content----------------------------------------------------" + dichSai);
+//                            break;
+//                        }
+//
+//                    }
+//                    if (dau == 0) {
+//                        dichDung++;
+//                        System.out.println("True ------------------" +dichDung);
+//                    }
+//                } else {
+//                    dichSai++;
+//                    System.out.println("Dich sai length " + dichSai);
+//                }
+//                
+//                int lengTemp = rcS.data.length;
+//                System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
+//                temp += lengTemp;
             }
 
 //            udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
-            udpSend.sendUDPPacket(msg, "192.168.22.158", 20552);
+            udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
 
             for (int j = 0; j < i; j++) {
-                queueSend.remove(j);
+                queueSend.remove(0);
             }
-        } catch (Exception e) {
-            System.err.println("error : " + e.getMessage());
-        }
+//        } 
+//        catch (Exception e) {
+//            System.err.println("error : " + e.getMessage());
+//        }
 
         len = 0;
 
     }
+    
+    public void layindexcuoicanphat1() throws InterruptedException {
+        RecordsSent rcS = queueSend.take();
+        if (rcS.data == null) {
+            System.out.println(" nul;fdgsdgdsfg");
+        } else {
+            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Data length = " + Integer.toString(rcS.data.length));
+        }
+        
+        /*
+        int j = queueSend.size();
+        for (int i = 0; i < j ; i++) {
+            RecordsSent rcS = queueSend.get(i);
+            if(rcS.data == null){
+                System.out.println(" nul;fdgsdgdsfg");
+            }
+        }
+        for (int i = 0; i < j ; i++) {
+            queueSend.remove(0);
+        }
+        */
+    }
 
-    public int layindexcuoicanphat() {
-
-        int i;
+    
+    
+    
+    public void send() throws InterruptedException, IOException {
+        List<Byte> list = new ArrayList<>();
+        int temp = 3;
+        
+        while(temp < MAX_BYTE_INPACKET - 200){
+            RecordsSent rcS = queueSend.take();
+            countMessage++;
+            int lengTemp = rcS.data.length;
+            for(int i = 0; i < lengTemp; i++){
+                list.add(rcS.data[i]);
+            }
+            
+//            System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
+            temp += lengTemp;
+        }
+        byte[] msg = new byte[temp];
+        msg[0] = 21;
+        msg[1] = (byte) (msg.length >> 8);
+        msg[2] = (byte) (msg.length & 0xFF);
+        for(int i = 3; i < list.size(); i++){
+            msg[i] = list.get(i-3);
+        }
+        udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
+//        int i = 0;
 //        for(RecordsSent rcS : queueSend){
 //            len += rcS.data.length;
 //            i++;
@@ -145,19 +217,13 @@ public class SendData implements Runnable {
 //                break;
 //            }
 //        }
-        for (i = 0; i < queueSend.size(); i++) {
-            len += queueSend.get(i).data.length;
-            if (len >= MAX_BYTE_INPACKET - 100) {
-                break;
-            }
-            //  System.arraycopy(i, i, i, i, i);
-        }
-        len -= queueSend.get(i).data.length;
+        
+        // XEM LAIJ
+        //len -= queueSend.get(i).data.length;
         //  i = la phan tu cuoi can gop
 
-        System.out.println("i = " + Integer.toString(i) + " Len " + Integer.toString(len));
+//        System.out.println("i = " + Integer.toString(i) + " Len " + Integer.toString(len));
 
-        return i;
         //lay 1 phan tu ra
         //        xem do dai da qua MAX
         //                chua get tiep xem qua MAX Chaw
@@ -177,6 +243,9 @@ public class SendData implements Runnable {
          */
     }
 
+    
+    
+    
     @Override
 
     public void run() {
@@ -184,22 +253,28 @@ public class SendData implements Runnable {
         while (true) {
 
 //            System.out.println("DOAN NAY DUNG SE CONVERT VA PHAT CHO CLIENT");
-            if (queueSend.size() > 100) {
-                int count = layindexcuoicanphat();
+            int sz = queueSend.size();
+            if (sz > 30) {
                 try {
-                    gopGoiphatdivaxoa(count);
-
-                    // int version = rs.getVerion();
-                    // byte[] _data = rs.data;
-                } catch (IOException ex) {
-                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                    layindexcuoicanphat1();
+//                    send();
+//                try {
+//                    gopGoiphatdivaxoa(count);
+//
+//                    // int version = rs.getVerion();
+//                    // byte[] _data = rs.data;
+//                } catch (IOException ex) {
+//                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
+//                } catch (InterruptedException ex) {
+//                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+    } catch (InterruptedException ex) {
+        Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
+    }
             }
 
             try {
-                Thread.sleep(10);
+                Thread.sleep(5);
             } catch (InterruptedException ex) {
                 Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
             }
