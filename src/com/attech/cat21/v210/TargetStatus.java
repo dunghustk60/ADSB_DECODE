@@ -14,6 +14,18 @@ public class TargetStatus {
     private boolean lNAVMode;
     private short priorityStatus;
     private short surveillanceStatus;
+    // Dung add 10 Jan 2025
+    private boolean militaryEmergency;
+
+    public boolean isMilitaryEmergency() {
+        return militaryEmergency;
+    }
+
+    public void setMilitaryEmergency(boolean militaryEmergency) {
+        this.militaryEmergency = militaryEmergency;
+    }
+    
+    
 
     /**
      * @return the intentChangeFlag

@@ -4,6 +4,7 @@
  */
 package adsb_decode;
 
+import com.attech.cat21.v210.BinaryMessage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,23 +21,25 @@ import java.util.logging.Logger;
  * @author tranduc
  */
 public class SendData implements Runnable {
-    
-    final int MAX_BYTE_INPACKET = 1000;  
-    public static int len = 0;
-    
+
+    final int MAX_BYTE_INPACKET = 1000;
+    int len = 0;
+    int dichDung = 0;
+    int dichSai = 0;
+    int countMessage = 0;
     UDPSender udpSend = null;
     private List<RecordsSent> queueSend;
-    
+
     public SendData(List<RecordsSent> q) {
-      
+
         queueSend = q;
         udpSend = new UDPSender();
     }
-    
+
     //--------------------------------------------------------------
     // Function to convert an integer to a two-byte array
     //--------------------------------------------------------------
-    public  byte[] intToTwoOctetBytes(int value) {
+    public byte[] intToTwoOctetBytes(int value) {
         // Create a byte array to hold the 2 bytes (16 bits)
         byte[] result = new byte[2];
 
@@ -48,35 +51,36 @@ public class SendData implements Runnable {
 
         return result;
     }
+
     //--------------------------------------------------------------
     //
     //--------------------------------------------------------------
     private byte[] buildCat21single(byte[] data) {
-        byte[] tmp = new byte[data.length+3];
+        byte[] tmp = new byte[data.length + 3];
         tmp[0] = 21;
-        byte[] len = intToTwoOctetBytes(data.length+3);
+        byte[] len = intToTwoOctetBytes(data.length + 3);
         tmp[1] = len[0];
         tmp[2] = len[1];
         System.arraycopy(data, 0, tmp, 3, data.length);
         return tmp;
     }
-    
+
     //--------------------------------------------------------------
     //
     //
     //  DUNG BAT DAU TU DAY
     //
     //--------------------------------------------------------------
-      public static void writeByteArrayToRCDFile(byte[] byteArray, String filePath) throws IOException {
+    public static void writeByteArrayToRCDFile(byte[] byteArray, String filePath) throws IOException {
         // Create a file output stream
         Path path = Paths.get(filePath);
-        if(!Files.exists(path)){
+        if (!Files.exists(path)) {
             Files.createFile(path);
         }
-        Files.write(path,byteArray, StandardOpenOption.APPEND);
+        Files.write(path, byteArray, StandardOpenOption.APPEND);
     }
-      
-     public void gopGoiphatdivaxoa(int i) throws IOException, InterruptedException {
+
+    public void gopGoiphatdivaxoa(int i) throws IOException, InterruptedException {
         try {
             byte[] msg = new byte[len + 3];
             msg[0] = 21;
@@ -84,14 +88,41 @@ public class SendData implements Runnable {
             msg[2] = (byte) (msg.length & 0xFF);
             int temp = 3;
             for (int j = 0; j < i; j++) {
+                countMessage++;
                 RecordsSent rcS = queueSend.get(j);
+
+                BinaryMessage binaryMessage = new BinaryMessage(rcS.getMsg());
+
+                byte[] goc = rcS.data;
+                byte[] dich = binaryMessage.getBinaryMessage();
+
+                if (goc.length == dich.length) {
+                    int dau = 0;
+                    for (int t = 0; t < goc.length; t++) {
+                        if (goc[i] != dich[i]) {
+                            dau = 1;
+                            dichSai++;
+                            System.out.println("Dich sai content----------------------------------------------------" + dichSai);
+                            break;
+                        }
+
+                    }
+                    if (dau == 0) {
+                        dichDung++;
+                        System.out.println("True ------------------" +dichDung);
+                    }
+                } else {
+                    dichSai++;
+                    System.out.println("Dich sai length " + dichSai);
+                }
+                
                 int lengTemp = rcS.data.length;
                 System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
                 temp += lengTemp;
             }
 
 //            udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
-        udpSend.sendUDPPacket(msg, "192.168.22.158",20552);
+            udpSend.sendUDPPacket(msg, "192.168.22.158", 20552);
 
             for (int j = 0; j < i; j++) {
                 queueSend.remove(j);
@@ -102,11 +133,10 @@ public class SendData implements Runnable {
 
         len = 0;
 
-     } 
-   
-      
+    }
+
     public int layindexcuoicanphat() {
-        
+
         int i;
 //        for(RecordsSent rcS : queueSend){
 //            len += rcS.data.length;
@@ -115,23 +145,23 @@ public class SendData implements Runnable {
 //                break;
 //            }
 //        }
-        for ( i = 0 ; i < queueSend.size() ; i ++ ) {
+        for (i = 0; i < queueSend.size(); i++) {
             len += queueSend.get(i).data.length;
-            if(len >= MAX_BYTE_INPACKET - 100) {
+            if (len >= MAX_BYTE_INPACKET - 100) {
                 break;
             }
-          //  System.arraycopy(i, i, i, i, i);
+            //  System.arraycopy(i, i, i, i, i);
         }
         len -= queueSend.get(i).data.length;
-       //  i = la phan tu cuoi can gop
-        
+        //  i = la phan tu cuoi can gop
+
         System.out.println("i = " + Integer.toString(i) + " Len " + Integer.toString(len));
-        
+
         return i;
         //lay 1 phan tu ra
         //        xem do dai da qua MAX
         //                chua get tiep xem qua MAX Chaw
-                                
+
         /*
         System.out.println("Phat hien co " + Integer.toString(queueSend.size()) + " Records can phat di");
         RecordsSent rs = get(0);
@@ -144,24 +174,21 @@ public class SendData implements Runnable {
         } catch (IOException ex) {
             Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
         }
-        */
+         */
     }
-      
-      
-      
+
     @Override
-    
+
     public void run() {
-        
-        while(true) {
-            
+
+        while (true) {
+
 //            System.out.println("DOAN NAY DUNG SE CONVERT VA PHAT CHO CLIENT");
-            if(queueSend.size() > 100 ) {
+            if (queueSend.size() > 100) {
                 int count = layindexcuoicanphat();
                 try {
                     gopGoiphatdivaxoa(count);
-                    
-                    
+
                     // int version = rs.getVerion();
                     // byte[] _data = rs.data;
                 } catch (IOException ex) {
@@ -170,18 +197,16 @@ public class SendData implements Runnable {
                     Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException ex) {
                 Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
         }
     }
-    
-    
-    
+
     /*
     public void run1() {
          // Task to be executed in the thread
@@ -210,5 +235,5 @@ public class SendData implements Runnable {
             
         }
     }
-    */
+     */
 }

@@ -31,7 +31,14 @@ public class TrajectoryIntent {
     
     
     private double _tcpTurnRadius;
-
+    
+    
+    
+    public boolean checkHasSubField1(){
+        if(this._isDataAvailable == true || this._isDataValid == true) return true;
+        return false;
+    }
+    
     /**
      * @return the _isHasSubField1
      */

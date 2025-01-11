@@ -22,12 +22,30 @@ public class TargetReportDescriptor implements Serializable{
     private boolean isTestTarget;
     private boolean isSelectedAltitudeAvailable;
     private int confidenceLevel;
+    
     private boolean isIndependentPositionCheck;
     private boolean isNoGoBitStatus;
     private boolean isCompactPositionReporting;
     private boolean isLocalDecodingPositionJump;
     private boolean isRangeCheckFail;
-
+    
+    public boolean checkFieldExtension1(){
+        if(this.isDifferentialCorrection == true || this.isGroundBitSet == true || 
+                this.isSimulatedTargetReport == true || this.isTestTarget == true ||
+                this.isSelectedAltitudeAvailable == true || this.confidenceLevel != 0){
+            return true;
+        }
+        return false;
+    }
+    public boolean checkFieldExtension2(){
+        if(this.isIndependentPositionCheck == true || this.isNoGoBitStatus == true || 
+                this.isCompactPositionReporting == true || this.isLocalDecodingPositionJump == true ||
+                this.isRangeCheckFail == true){
+            return true;
+        }
+        return false;
+    }
+    
     /**
      * @return the addressType
      */

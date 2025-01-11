@@ -26,7 +26,27 @@ public class QualityIndicator implements Serializable {
     
     // Sub field 03
     private Short positionIntegrityCategory;
+	
+    public boolean checkFieldExtension1() {
+        if (this.nICForBarometricAltitude != null || this.sIL != null || this.nACForPosition != null) {
+            return true;
+        }
+        return false;
+    }
 
+    public boolean checkFieldExtension2() {
+        if (this.silSupplement != null || this.systemDesignAssuranceLevel != null || this.geometricAltAcc != null) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean checkFieldExtension3() {
+        if (this.positionIntegrityCategory != null) {
+            return true;
+        }
+        return false;
+    }
     
 
     /**

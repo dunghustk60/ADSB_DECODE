@@ -127,6 +127,8 @@ public class Cat21Message {
     private Short receiverId;
     private DataAges dataAges;
     
+    private Integer reservedExpansionFieldLength;
+    private Integer specialPurposeFieldLength;
     /*
      * Header Byte 06
      * 43 - Not Used -
@@ -142,6 +144,24 @@ public class Cat21Message {
     
     public Cat21Message() {
     }
+
+    public Integer getReservedExpansionFieldLength() {
+        return reservedExpansionFieldLength;
+    }
+
+    public void setReservedExpansionFieldLength(Integer reservedExpansionFieldLength) {
+        this.reservedExpansionFieldLength = reservedExpansionFieldLength;
+    }
+
+    public Integer getSpecialPurposeFieldLength() {
+        return specialPurposeFieldLength;
+    }
+
+    public void setSpecialPurposeFieldLength(Integer specialPurposeFieldLength) {
+        this.specialPurposeFieldLength = specialPurposeFieldLength;
+    }
+    
+    
     
     public Cat21Message(byte[] bytes) {
         this.data = new byte[bytes.length];

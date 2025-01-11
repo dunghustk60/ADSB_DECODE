@@ -21,8 +21,10 @@ public class RecordsSent {
      byte[] pos = new byte[6];
      byte[] poshires= new byte[8];
      public String Callsign;
+     Cat21Message msg;
      
     public void add_data(Cat21Message cat21Decoded) {
+        this.msg = cat21Decoded;
         byte[] d = cat21Decoded.getBytes();
         this.data = new byte[d.length];
         
@@ -33,6 +35,22 @@ public class RecordsSent {
         startTime = System.nanoTime()/1000;     // Thoi diem add
     }
 
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
+    public Cat21Message getMsg() {
+        return msg;
+    }
+
+    public void setMsg(Cat21Message msg) {
+        this.msg = msg;
+    }
+    
     /**
      * @return the verion
      */

@@ -631,11 +631,17 @@ public class Cat21Decoder {
                     case 47: // Reserved Expansion Field
                         int reservedExpansionFieldLength = bytes[index] & 0xFF;
                         index += reservedExpansionFieldLength;
+                        if(reservedExpansionFieldLength > 0){
+                            message.setReservedExpansionFieldLength(reservedExpansionFieldLength);
+                        }
                         break;
                     case 48: // Special Purpose Field
 
                         int specialPurposeFieldLength = bytes[index] & 0xFF;
                         index += specialPurposeFieldLength;
+                        if(specialPurposeFieldLength > 0){
+                            message.setSpecialPurposeFieldLength(specialPurposeFieldLength);
+                        }
                         break;
                     default:
                         break;

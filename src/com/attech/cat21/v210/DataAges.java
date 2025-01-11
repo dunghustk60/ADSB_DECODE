@@ -9,6 +9,7 @@ package com.attech.cat21.v210;
  * @author andh
  */
 public class DataAges {
+
     private Double aircraftOperationalStatusAge;
     private Double targetReportDescriptorAge;
     private Double mode3ACodeAge;
@@ -32,7 +33,32 @@ public class DataAges {
     private Double rollAngleAge;
     private Double aCASResolutionAdvisoryAge;
     private Double surfaceCapabilitiesAndCharacteristics;
-    
+
+    public boolean checkFieldExtension1() {
+        if (this.flightLevelAge == null && this.intermediateStateSelectedAltitudeAge == null && this.finalStateSelectedAltitudeAge == null
+                && this.airSpeedAge == null && this.trueAirSpeedAge == null && this.magneticHeadingAge == null
+                && this.barometricVerticalRateAge == null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean checkFieldExtension2() {
+        if (this.geometricVerticalRateAge == null && this.groundVectorAge == null && this.trackAngleRateAge == null
+                && this.targetIdentificationAge == null && this.targetStatusAge == null && this.metInformationAge == null
+                && this.rollAngleAge == null) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean checkFieldExtension3() {
+        if (this.aCASResolutionAdvisoryAge == null && this.surfaceCapabilitiesAndCharacteristics == null) {
+            return false;
+        }
+        return true;
+    }
+
     public DataAges() {
     }
 
@@ -44,7 +70,8 @@ public class DataAges {
     }
 
     /**
-     * @param aircraftOperationalStatusAge the aircraftOperationalStatusAge to set
+     * @param aircraftOperationalStatusAge the aircraftOperationalStatusAge to
+     * set
      */
     public void setAircraftOperationalStatusAge(Double aircraftOperationalStatusAge) {
         this.aircraftOperationalStatusAge = aircraftOperationalStatusAge;
@@ -156,7 +183,8 @@ public class DataAges {
     }
 
     /**
-     * @param intermediateStateSelectedAltitudeAge the intermediateStateSelectedAltitudeAge to set
+     * @param intermediateStateSelectedAltitudeAge the
+     * intermediateStateSelectedAltitudeAge to set
      */
     public void setIntermediateStateSelectedAltitudeAge(Double intermediateStateSelectedAltitudeAge) {
         this.intermediateStateSelectedAltitudeAge = intermediateStateSelectedAltitudeAge;
@@ -170,7 +198,8 @@ public class DataAges {
     }
 
     /**
-     * @param finalStateSelectedAltitudeAge the finalStateSelectedAltitudeAge to set
+     * @param finalStateSelectedAltitudeAge the finalStateSelectedAltitudeAge to
+     * set
      */
     public void setFinalStateSelectedAltitudeAge(Double finalStateSelectedAltitudeAge) {
         this.finalStateSelectedAltitudeAge = finalStateSelectedAltitudeAge;
@@ -352,12 +381,13 @@ public class DataAges {
     }
 
     /**
-     * @param surfaceCapabilitiesAndCharacteristics the surfaceCapabilitiesAndCharacteristics to set
+     * @param surfaceCapabilitiesAndCharacteristics the
+     * surfaceCapabilitiesAndCharacteristics to set
      */
     public void setSurfaceCapabilitiesAndCharacteristics(Double surfaceCapabilitiesAndCharacteristics) {
         this.surfaceCapabilitiesAndCharacteristics = surfaceCapabilitiesAndCharacteristics;
     }
-    
+
     @Override
     public String toString() {
         /*
@@ -385,8 +415,7 @@ public class DataAges {
         builder.append(" Roll Angle Age: ").append(rollAngleAge);
         builder.append(" ACAS Resolution Advisory Age: ").append(aCASResolutionAdvisoryAge);
         builder.append(" Surface Capabilities And Characteristics: ").append(surfaceCapabilitiesAndCharacteristics);
-        */
+         */
         return String.format("Amplitude Age: %.2f", messageAmplitudeAge);
     }
 }
-
