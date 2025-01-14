@@ -1,0 +1,6 @@
+<Configuration>
+    <ReceiveIP>192.168.22.158</ReceiveIP>
+    <ReceivePort>20001</ReceivePort>
+    <MulticastIP>192.168.22.158</MulticastIP>
+    <MulticastPort>20552</MulticastPort>
+</Configuration>

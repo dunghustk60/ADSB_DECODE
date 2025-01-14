@@ -630,17 +630,22 @@ public class BinaryMessage {
             
             
             if(this.cat21Message.getReservedExpansionFieldLength() != null){
-                bytes.add((byte)(this.cat21Message.getReservedExpansionFieldLength().byteValue()));
+                for(int i = 0; i < this.cat21Message.getReservedExpansionFieldLength().length;i++){
+                    bytes.add(this.cat21Message.getReservedExpansionFieldLength()[i]);
+                }
+                
                 h7 |= 0x04;
                 
-                bytes2D[47] = new byte[]{this.cat21Message.getReservedExpansionFieldLength().byteValue()};
+                bytes2D[47] = this.cat21Message.getReservedExpansionFieldLength();
                 header[47] = true;
             }
             if(this.cat21Message.getSpecialPurposeFieldLength() != null){
-                bytes.add((byte)(this.cat21Message.getSpecialPurposeFieldLength().byteValue()));
+                for(int i = 0; i < this.cat21Message.getSpecialPurposeFieldLength().length;i++){
+                    bytes.add(this.cat21Message.getSpecialPurposeFieldLength()[i]);
+                }
                 h7 |= 0x02;
                 
-                bytes2D[48] = new byte[]{this.cat21Message.getSpecialPurposeFieldLength().byteValue()};
+                bytes2D[48] = this.cat21Message.getSpecialPurposeFieldLength();
                 header[48] = true;
                 
             }
@@ -703,13 +708,14 @@ public class BinaryMessage {
 
     public static byte[] encodeACASResolutionAdvisoryReport(ASCASResolutionAdvisoryReport aSCASResolutionAdvisoryReport) {
         byte bytes[] = new byte[7];
-        bytes[0] |= (aSCASResolutionAdvisoryReport.getMessageType() & 0x0F) << 4;
-        bytes[0] |= (aSCASResolutionAdvisoryReport.getMessageSubType() & 0x0F);
+        // Dung comment Jan 13 2025
+        bytes[0] = (byte)( ((aSCASResolutionAdvisoryReport.getMessageType() & 0x1F) << 3)|(aSCASResolutionAdvisoryReport.getMessageSubType() & 0x07));
+        
 
-        bytes[1] |= (aSCASResolutionAdvisoryReport.getActiveResolutionAdvisories() >> 6) & 0xFF;
+        bytes[1] = (byte) ((aSCASResolutionAdvisoryReport.getActiveResolutionAdvisories() >> 6) & 0xFF);
 
-        bytes[2] |= (aSCASResolutionAdvisoryReport.getActiveResolutionAdvisories() & 0x3F);
-        bytes[2] |= (aSCASResolutionAdvisoryReport.isRACRecord() >> 2) & 0x03;
+        bytes[2] = (byte)(((aSCASResolutionAdvisoryReport.getActiveResolutionAdvisories() & 0x3F)<<2) | ((aSCASResolutionAdvisoryReport.isRACRecord() >> 2) & 0x03));
+//        bytes[2] |= ((aSCASResolutionAdvisoryReport.isRACRecord() >> 2) & 0x03);
 
         bytes[3] |= (aSCASResolutionAdvisoryReport.isRACRecord() & 0x03) << 6;
         bytes[3] |= ((aSCASResolutionAdvisoryReport.isrATerminated() == true ? 1 : 0) & 0x01) << 5;
@@ -771,6 +777,15 @@ public class BinaryMessage {
 
             encodedByte2 |= (surfaceCapabilitiesAndCharacterics.getLengthWidth() & 0x0F) << 4;
             list.add(encodedByte2);
+        }else{
+            byte encodedByte1 = 0;
+            encodedByte1 |= ((surfaceCapabilitiesAndCharacterics.isPositionOffSetApplied() == true ? 1 : 0) & 0x01) << 5;
+            encodedByte1 |= ((surfaceCapabilitiesAndCharacterics.isCockpitDisplayOfTrafficInformationSurface() == true ? 1 : 0) & 0x01) << 4;
+            encodedByte1 |= ((surfaceCapabilitiesAndCharacterics.isB2low() == true ? 1 : 0) & 0x01) << 3;
+            encodedByte1 |= ((surfaceCapabilitiesAndCharacterics.isReceivingATCServices() == true ? 1 : 0) & 0x01) << 2;
+            encodedByte1 |= ((surfaceCapabilitiesAndCharacterics.isIndent() == true ? 1 : 0) & 0x01) << 1;
+
+            list.add(encodedByte1);
         }
         byte[] bytes = new byte[list.size()];
         for (int i = 0; i < list.size(); i++) {
@@ -868,11 +883,17 @@ public class BinaryMessage {
     }
 
     public static byte[] encodeSelectedAltitude(SelectedAltitude selectedAltitude) {
-        byte[] bytes = encodeFToBytes(selectedAltitude.getAltitude(), 1 / 25, 2);
-        bytes[0] = (byte) (bytes[0] & 0x1F);
-        bytes[0] |= (selectedAltitude.getSource() & 0x03) << 5;
+//        byte[] bytes = encodeDToBytes(selectedAltitude.getAltitude(), 1 / 25, 2);
+        // Dung fix Jan 11 2025
+        int iValue =Math.round(selectedAltitude.getAltitude()*1/25);
+        byte[] bytes = new byte[2];
         bytes[0] |= ((selectedAltitude.isIsSourceAvailability() == true ? 1 : 0) & 0x01) << 7;
-
+        bytes[0] |= (selectedAltitude.getSource() & 0x03) << 5;
+        bytes[0] |= (byte) ((iValue>>8) & 0x1F);
+        
+        bytes[1] = (byte) (iValue & 0xFF);
+        
+        
         return bytes;
     }
 
@@ -911,15 +932,21 @@ public class BinaryMessage {
         }
         return bytes;
     }
-
+    public static byte[] intToByteArray(int number){
+        // Allocate a ByteBuffer of size 4 (integer is 4 bytes)
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+        buffer.putInt(number);
+        return buffer.array();
+    }
     public static byte[] encodeAirborneGroundVector(AirborneGroundVector airborneGroundVector) {
-        byte[] bytes = new byte[4];
-        short shortV = (short) Math.round(airborneGroundVector.getTrackAngle() * 65536 / 360);
-        bytes[3] |= shortV & 0xFF;
-        bytes[2] |= (shortV >> 8) & 0xFF;
-        short shortV1 = (short) Math.round(airborneGroundVector.getGroundSpeed() * 1 / 0.22); // LSB = 2^-14, or 0.22
-        bytes[1] |= shortV1 & 0xFF;
-        bytes[0] |= (shortV1 >> 8) & 0x7F;
+//        byte[] bytes = new byte[4];
+        int shortV = (int) Math.round(airborneGroundVector.getTrackAngle() *1/0.0055);
+        byte[] bytes = intToByteArray(shortV);
+        bytes[3] = (byte) (shortV & 0xFF);
+        bytes[2] = (byte)((shortV >> 8) & 0xFF);
+        int shortV1 = (int) Math.round(airborneGroundVector.getGroundSpeed() * 1 / 0.22); // LSB = 2^-14, or 0.22
+        bytes[1] = (byte)(shortV1 & 0xFF);
+        bytes[0] = (byte)((shortV1 >> 8) & 0x7F);
         if (airborneGroundVector.isRangeExceeded()) {
             bytes[0] |= 0x80;
         }
@@ -956,7 +983,8 @@ public class BinaryMessage {
 
     public static byte[] encodeTimeOfMessageReceptionOfPositionHighPrecision(HighResolutionTimeSecond highResolutionTimeSecond) {
         byte[] encodedBytes = new byte[4];
-        int scaledV = (int) (highResolutionTimeSecond.getValue() * 1073741824);
+        long scaledV = (long) (highResolutionTimeSecond.getValue() * Math.pow(2, 30)); 
+        //1073741824
         encodedBytes[3] = (byte) (scaledV & 0xFF);
         encodedBytes[2] = (byte) ((scaledV >> 8) & 0xFF);
         encodedBytes[1] = (byte) ((scaledV >> 16) & 0xFF);
@@ -967,11 +995,15 @@ public class BinaryMessage {
 
     public static byte[] encodeTrueAirSpeed(IValue trueAirSpeed) {
         byte[] encodedBytes = new byte[2];
-        encodedBytes[0] = (byte) ((trueAirSpeed.getValue() >> 8) & 0x7F);
-        encodedBytes[1] = (byte) (trueAirSpeed.getValue() & 0xFF);
-        if (trueAirSpeed.isIsRangeExceeded()) {
-            encodedBytes[0] |= 0x80;
+
+        if (trueAirSpeed.isIsRangeExceeded()) {  
+            encodedBytes[0] = (byte) (0x80 | ((trueAirSpeed.getValue() >> 8) & 0x7F));
+            encodedBytes[1] = (byte) (trueAirSpeed.getValue() & 0xFF);
+        } else {
+            encodedBytes[0] = (byte) ((trueAirSpeed.getValue() >> 8) & 0x7F);
+            encodedBytes[1] = (byte) (trueAirSpeed.getValue() & 0xFF);
         }
+
         return encodedBytes;
     }
 
@@ -1114,7 +1146,7 @@ public class BinaryMessage {
             byte7 = encodeDoubleToByte(dataAges.getGeometricHeightAge(), 10f);
             list1.add(byte7);
         }
-        if (dataAges.checkFieldExtension1()) {
+        if (dataAges.checkFieldExtension1() || dataAges.checkFieldExtension2() || dataAges.checkFieldExtension3()) {
             list.set(0, (byte) (list.get(0) | 0x01));
         } else {
             list.addAll(list1);
@@ -1154,10 +1186,10 @@ public class BinaryMessage {
             list1.add(byte11);
         }
 
-        if (dataAges.getTrajectoryIntentAge() != null) {
+        if (dataAges.getTrueAirSpeedAge()!= null) {
             list.set(1, (byte) (list.get(1) | 0x08));
             byte byte12 = 0;
-            byte12 = encodeDoubleToByte(dataAges.getTrajectoryIntentAge(), 10);
+            byte12 = encodeDoubleToByte(dataAges.getTrueAirSpeedAge(), 10);
             list1.add(byte12);
         }
 
@@ -1174,7 +1206,7 @@ public class BinaryMessage {
             byte14 = encodeDoubleToByte(dataAges.getBarometricVerticalRateAge(), 10);
             list1.add(byte14);
         }
-        if (dataAges.checkFieldExtension2()) {
+        if (dataAges.checkFieldExtension2() || dataAges.checkFieldExtension3()) {
             list.set(1, (byte) (list.get(1) | 0x01));
         } else {
             list.addAll(list1);
@@ -1244,6 +1276,7 @@ public class BinaryMessage {
             }
             return bytes;
         }
+        
         list.add((byte) 0);
 
         if (!(dataAges.getaCASResolutionAdvisoryAge() == null)) {
@@ -1259,7 +1292,7 @@ public class BinaryMessage {
             byte23 = encodeDoubleToByte(dataAges.getSurfaceCapabilitiesAndCharacteristics(), 10);
             list1.add(byte23);
         }
-        list.set(3, (byte) (list.get(3) | 0x01));
+//        list.set(3, (byte) (list.get(3) | 0x01));
 
         list.addAll(list1);
         byte[] bytes = new byte[list.size()];
@@ -1408,7 +1441,8 @@ public class BinaryMessage {
         encodedByte2 |= ((targetReportDescriptor.isIsSimulatedTargetReport() == true ? 1 : 0) & 0x01) << 5;
         encodedByte2 |= ((targetReportDescriptor.isIsTestTarget() == true ? 1 : 0) & 0x01) << 4;
         encodedByte2 |= ((targetReportDescriptor.isIsSelectedAltitudeAvailable() == true ? 1 : 0) & 0x01) << 3;
-        encodedByte2 |= (targetReportDescriptor.getConfidenceLevel() & 0x02) << 1;
+        encodedByte2 |= (targetReportDescriptor.getConfidenceLevel() & 0x03) << 1;
+        // Dung fix Jan 11 2025
 
         if (targetReportDescriptor.checkFieldExtension2()) {
             encodedByte2 |= 0x01;

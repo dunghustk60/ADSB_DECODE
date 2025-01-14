@@ -8,6 +8,7 @@ import java.net.*;
 import java.io.*;
 
 public class MulticastSender {
+    /*
     public static void main(String[] args) {
         try {
             // Define the multicast group address and port
@@ -32,4 +33,5 @@ public class MulticastSender {
             e.printStackTrace();
         }
     }
+*/
 }

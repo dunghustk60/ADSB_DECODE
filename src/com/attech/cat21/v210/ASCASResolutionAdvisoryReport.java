@@ -12,6 +12,7 @@ public class ASCASResolutionAdvisoryReport {
     private short messageType;
     private short messageSubType;
     private short activeResolutionAdvisories;
+//    private int activeResolutionAdvisories;
     private short rACRecord;
     private boolean rATerminated;
     private boolean multipleThreatEncounter;

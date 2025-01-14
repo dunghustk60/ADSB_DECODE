@@ -18,7 +18,7 @@ public class receiveThread  implements Runnable {
         while(true) {
           System.out.println("Thread is running!");
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1);
             } catch (InterruptedException ex) {
                 Logger.getLogger(receiveThread.class.getName()).log(Level.SEVERE, null, ex);
             }

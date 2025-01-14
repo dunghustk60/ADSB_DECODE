@@ -6,6 +6,7 @@ package com.attech.cat21.v210;
 
 import com.attech.cat21.util.BitwiseUtils;
 import com.attech.cat21.util.CharacterMap;
+import java.nio.Buffer;
 // import com.attech.common.message.Message;
 // import com.attech.common.message.PositionWGS84;
 import java.nio.ByteBuffer;
@@ -16,7 +17,7 @@ public class Cat21Decoder {
 
     private static final char[] characters = CharacterMap.getCharacterMap();
     private static final byte[] masked = new byte[]{(byte) 0x80, (byte) 0x40, (byte) 0x20, (byte) 0x10, (byte) 0x08, (byte) 0x04, (byte) 0x02};
-    private static final short ITEM_NUMBER = 50;
+    private static final short ITEM_NUMBER = 49;
     private static boolean tracing = false;
    
 
@@ -208,7 +209,7 @@ public class Cat21Decoder {
  
         //String s = toTwosComplement(b1);
         //System.out.println(s);
-        if(count <6) {
+        if(count < 6) {
              return count;
 
         }
@@ -219,7 +220,7 @@ public class Cat21Decoder {
 //        int start = index;
         // index la byte dau tien
         int index_mark;
-        try {
+//        try {
             int start = index;
             final boolean [] header = new boolean[ITEM_NUMBER];
             for (int i = 0; i < ITEM_NUMBER; i++) {
@@ -632,7 +633,10 @@ public class Cat21Decoder {
                         int reservedExpansionFieldLength = bytes[index] & 0xFF;
                         index += reservedExpansionFieldLength;
                         if(reservedExpansionFieldLength > 0){
-                            message.setReservedExpansionFieldLength(reservedExpansionFieldLength);
+                            byte[] rEF = new byte[reservedExpansionFieldLength];
+                            rEF[0] = (byte)(reservedExpansionFieldLength & 0xFF);
+                            System.arraycopy(bytes, index-reservedExpansionFieldLength, rEF, 0, reservedExpansionFieldLength);
+                            message.setReservedExpansionFieldLength(rEF);
                         }
                         break;
                     case 48: // Special Purpose Field
@@ -640,7 +644,11 @@ public class Cat21Decoder {
                         int specialPurposeFieldLength = bytes[index] & 0xFF;
                         index += specialPurposeFieldLength;
                         if(specialPurposeFieldLength > 0){
-                            message.setSpecialPurposeFieldLength(specialPurposeFieldLength);
+                            byte[] sPF = new byte[specialPurposeFieldLength & 0xFF];
+                            sPF[0] = (byte) specialPurposeFieldLength;
+                            System.arraycopy(bytes, index-specialPurposeFieldLength+1, sPF, 1, specialPurposeFieldLength-1);
+                            
+                            message.setSpecialPurposeFieldLength(sPF);
                         }
                         break;
                     default:
@@ -673,11 +681,14 @@ public class Cat21Decoder {
             // Tong so byte da giai ma
             System.out.println("Tong so byte da giai ma " + Integer.toString(contentLen));
             return contentLen;
-        } catch (Exception ex) {
+//        }
+        /*
+        catch (Exception ex) {
             //System.out.printf("DEBUG DECODE: bytes:%s, start:%s, contentsByte:%s, 1, contentLen:%s%n",bytes, start, contentsByte, contentLen);
             System.out.println("Error when decode!");
             return -1;
         }
+        */
 //        finally{
 //            final int contentLen = index - start;
 //            final int lngth = contentLen + 3;
@@ -848,11 +859,11 @@ public class Cat21Decoder {
         if (isEnd) return 3;
         // add 27 Dec 2024
         int r = 3;
-        while(true){
-            r++;
-            isEnd = (bytes[index++] & 0x01) == 0;
-            if(isEnd) break;
-        }
+//        while(true){
+//            r++;
+//            isEnd = (bytes[index++] & 0x01) == 0;
+//            if(isEnd) break;
+//        }
         return r;
         
     }
@@ -909,9 +920,13 @@ public class Cat21Decoder {
         byte byteHigh = bytes[index++];
         short value = (short) (byteHigh >> 6 & 0x03);
         time.setFullSecondIndication(value);
-
+//        long iValue = ((byteHigh & 0x3f) << 24);
+//        iValue |=  ((bytes[index++]&0xFF)<<16);
+//        iValue |=  ((bytes[index++]&0xFF)<<8);
+//        iValue |=  ((bytes[index++]&0xFF));
         int iValue = ByteBuffer.wrap(new byte[]{(byte) (byteHigh & 0x3f), bytes[index++], bytes[index++], bytes[index++]}).getInt();
-        time.setValue(iValue * 0.9313);
+        time.setValue(iValue *Math.pow(2, -30)); 
+        // Dung fix 0.9313 to Math.pow(2,-30)
         return 4;
     }
     
@@ -980,7 +995,8 @@ public class Cat21Decoder {
         value.setIsRangeExceeded(isRangeExceeded);
         
         int speedValue = byteHigh & 0x7F;
-        speedValue = (speedValue << 8 | bytes[index++]) & 0xFF;
+        // Dung fix Jan 13 2025
+        speedValue = (((speedValue << 8)& 0xFFFF) | (bytes[index++]&0xFF));
         value.setValue(speedValue);
         
         return 2;
@@ -1084,7 +1100,8 @@ public class Cat21Decoder {
         if (!validateIndex(index, bytes.length, 1)) return -1;
         byte01 = bytes[index++]; // BYTE 4
         
-        value = (short) ((byte01 >> 4) & 0x07);
+        value = (short) ((byte01 >> 4) & 0x0F);
+        // Dung fix Jan 11 2025
         indicator.setPositionIntegrityCategory(value);
         
         extention = (byte01 & 0x01) > 0;
@@ -1168,10 +1185,14 @@ public class Cat21Decoder {
         bValue = (byteHigh & 0x40) > 0;
         targetStatus.setlNAVMode(bValue);
         
+        //Dung add Jan 13 2025
+        bValue = (byteHigh & 0x20) > 0;
+        targetStatus.setMilitaryEmergency(bValue);
+        
         short sValue = (short) (byteHigh >> 2 & 0x07);
         targetStatus.setPriorityStatus(sValue);
-        
-        sValue = (short) (byteHigh >> 2 & 0x03);
+        // Dung fix Jan 13 2025
+        sValue = (short) (byteHigh & 0x03);
         targetStatus.setSurveillanceStatus(sValue);
         
         return 1;
@@ -1190,17 +1211,18 @@ public class Cat21Decoder {
         dValue.setIsRangeExceeded(isRangeExceeded);
         
         int iValue = 0;
-        boolean positive = (int) (byteHigh & 0x40) <= 0;
-        // int length = bytes.length;
-        
-        if (positive) {
-            iValue = (byteHigh & 0x7F) << 8 | bytes[index++] & 0xFF;
-        } else {
-            iValue = (~(byteHigh & 0x7F) << 8 | ~bytes[index++]) & 0xFF;
-            iValue = iValue + 0x01;
-            iValue = -iValue;
-        }
-        
+//        boolean positive = (int) (byteHigh & 0x40) <= 0;
+//        
+//        if (positive) {
+//            iValue = (byteHigh & 0x7F) << 8 | bytes[index++] & 0xFF;
+//        } else {
+//            iValue = (~(byteHigh & 0x7F) << 8 | ~bytes[index++]) & 0xFF;
+//            iValue = iValue + 0x01;
+//            iValue = -iValue;
+//        }
+        // Dung comment Jan 11 2025
+        iValue = ByteBuffer.wrap(new byte[]{0,0,(byte) (byteHigh & 0x7f), bytes[index++]}).getInt();
+       
         // System.out.println(">> " + Integer.toBinaryString(byteHigh & 0xFF) + " - " + Integer.toBinaryString(bytes[index] & 0xFF) + " : " + iValue);
         dValue.setValue((double) iValue* 6.25);
         return 2;
@@ -1223,10 +1245,12 @@ public class Cat21Decoder {
         int iValue = ByteBuffer.wrap(new byte[] { 0x00, 0x00, (byte)(byteHigh & 0x7F), bytes[index++] }).getInt();
         airbone.setGroundSpeed(iValue* 0.22);
         
-        
+//        iValue = (bytes[index++]&0xFF);
+//        iValue = iValue << 8;
+//        iValue |= (bytes[index++]&0xFF);
         iValue = ByteBuffer.wrap(new byte[] { 0x00, 0x00, bytes[index++], bytes[index++] }).getInt();
         airbone.setTrackAngle(iValue* 0.0055);
-
+        // Dung fix 0.0055 to 360/2^16 = 360/65536 Jan 11 2025
         return 4;
     }
     
@@ -1544,24 +1568,25 @@ public class Cat21Decoder {
         short sValue = (short) (byteHigh >> 3 & 0x1F);
         ascasResolutionAvisoryReport.setMessageType(sValue);
         
-        sValue = (short) (byteHigh & 0x0F);
+        sValue = (short) (byteHigh & 0x07);
         ascasResolutionAvisoryReport.setMessageSubType(sValue);
         
         byteHigh = bytes[index++];
         byte byteLow = bytes[index++];
-
-        sValue = (short) ((byteHigh << 6) | (byteLow >> 2));
+//        int a = ByteBuffer.wrap(new byte[]{0,0,byteHigh, (byte)((byteLow >> 2)&0x3F)}).getInt();
+// Dung comment Jan 13 2025
+        sValue = (short) (((byteHigh<<6)&0x3FFF) | ((byteLow >> 2)&0x3F));
         ascasResolutionAvisoryReport.setActiveResolutionAdvisories(sValue);
         
         byteHigh = bytes[index++];
         
-        sValue = (short) (((byteLow & 0x03) << 2) | (byteHigh >> 6));
+        sValue = (short) (((byteLow & 0x03) << 2) | ((byteHigh >> 6) & 0x03));
         ascasResolutionAvisoryReport.setRACRecord(sValue);
         
-        boolean bValue = (byteHigh & 20) > 0;
+        boolean bValue = (byteHigh & 0x20) > 0;
         ascasResolutionAvisoryReport.setrATerminated(bValue);
         
-        bValue = (byteHigh & 10) > 0;
+        bValue = (byteHigh & 0x10) > 0;
         ascasResolutionAvisoryReport.setMultipleThreatEncounter(bValue);
         
         sValue = (short) (byteHigh >> 2 & 0x03);
@@ -1616,7 +1641,7 @@ public class Cat21Decoder {
         int counting = 0;
         
         while (!isEnd){
-            if (!validateIndex(startIndex, bytes.length, 1)) return -1;
+//            if (!validateIndex(startIndex, bytes.length, 1)) return -1;
             byte byteHigh = bytes[startIndex++];
             counting++;
             if (bIndex >= maxValue) break;
@@ -1624,6 +1649,8 @@ public class Cat21Decoder {
             
             if (bIndex >= maxValue) break;
             bValues[bIndex++] = (byteHigh & 0x40) > 0;
+            // Dung write Jan 12 2025
+            if(counting == 4) break;
             
             if (bIndex >= maxValue) break;
             bValues[bIndex++] = (byteHigh & 0x20) > 0;
@@ -1644,7 +1671,7 @@ public class Cat21Decoder {
         } 
         
         for (int i = 0; i < maxValue; i++) {
-            if (!validateIndex(startIndex, bytes.length, 1)) return -1;
+//            if (!validateIndex(startIndex, bytes.length, 1)) return -1;
             if (!bValues[i]) continue;
             switch(i) {
                 case 0: 

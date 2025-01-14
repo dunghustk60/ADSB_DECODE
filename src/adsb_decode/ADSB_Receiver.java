@@ -11,13 +11,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
 import java.util.concurrent.BlockingQueue;
+
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ADSB_Receiver implements Runnable {
   
-    final Queue<byte[]> queueRecceive = new LinkedList<>();
+    final BlockingQueue<byte[]> queueRecceive; 
    
     final List<Cat21Message> messages = new ArrayList<>();
     
@@ -29,7 +32,7 @@ public class ADSB_Receiver implements Runnable {
       
     int mode;
     
-    String ip = "10.10.1.6";
+    String ip = "10.10.1.10";
     int port = 20000; 
        
     private MulticastSocket msocket;
@@ -48,14 +51,19 @@ public class ADSB_Receiver implements Runnable {
         this.mode = mode;
         
         this.queueSend = qS;
-        recordsSentList = rSL;
+        this.recordsSentList = rSL;
+        queueRecceive = new LinkedBlockingQueue<>();
+        
+        receiveQueueProcess receiveProcess = new receiveQueueProcess(queueRecceive,qS,rSL);
+        threadRx = new Thread(receiveProcess);
+//        threadRx.start();
         
         SendData senddata = new SendData(qS);
         threadTx = new Thread(senddata);
+//        threadTx.start();
       
        
-        receiveQueueProcess receiveProcess = new receiveQueueProcess(queueRecceive,qS,rSL);
-        threadRx = new Thread(receiveProcess);
+        
         
         
         
@@ -63,7 +71,7 @@ public class ADSB_Receiver implements Runnable {
     
     String mcastadd = "239.1.1.123";
     int mport = 20000;
-    String bindIpAddress = "10.10.1.6";
+    String bindIpAddress = "10.10.1.10";
 
     public void SetMulticastParam(String maddr,int mp,String bindip) {
         this.mcastadd = maddr;
@@ -249,7 +257,7 @@ public class ADSB_Receiver implements Runnable {
     //
     //
     //--------------------------------------------------------------------
-    public void receiveUnicast() {
+    public void receiveUnicast() throws InterruptedException {
         int debug = 0;
       
         
@@ -287,7 +295,7 @@ public class ADSB_Receiver implements Runnable {
                 // XOA SAU KHI DUNG
                 asterixData = new byte[length];
                 System.arraycopy(receivedData, 0, asterixData, 0, length);
-                queueRecceive.offer(asterixData);
+                queueRecceive.put(asterixData);
 //                if (length > 0) {
 //                    asterixData = new byte[length];
 //                    System.arraycopy(receivedData, 0, asterixData, 0, length);
@@ -330,7 +338,7 @@ public class ADSB_Receiver implements Runnable {
     //
     //
     //--------------------------------------------------------------------
-    public void receiveMultiCast() {
+    public void receiveMultiCast() throws InterruptedException {
         int debug = 0;
              
         System.out.println("DIA CHI MCAST = " + mcastadd + " PORT + " + Integer.toString(mport) + " NIC: " +  bindIpAddress);
@@ -365,7 +373,7 @@ public class ADSB_Receiver implements Runnable {
                 // XOA SAU KHI DUNG
                 asterixData = new byte[length];
                 System.arraycopy(receivedData, 0, asterixData, 0, length);
-                queueRecceive.offer(asterixData);
+                queueRecceive.put(asterixData);
                 
                 //cat21.Decode(receivedData,length);
                 
@@ -406,13 +414,21 @@ public class ADSB_Receiver implements Runnable {
     
     @Override
     public void run() {
-        threadTx.start();
-        threadRx.start();
+//        threadTx.start();
+//        threadRx.start();
         
         if(this.mode == 1) {
-            receiveUnicast();
+            try {
+                receiveUnicast();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ADSB_Receiver.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else {
-            receiveMultiCast();
+            try {
+                receiveMultiCast();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ADSB_Receiver.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 }

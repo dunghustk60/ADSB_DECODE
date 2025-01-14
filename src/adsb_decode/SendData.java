@@ -33,6 +33,7 @@ public class SendData implements Runnable {
     //private List<RecordsSent> queueSend;
 
     BlockingQueue<RecordsSent> queueSend = null;
+
     public SendData(BlockingQueue<RecordsSent> q) {
 
         queueSend = q;
@@ -83,194 +84,108 @@ public class SendData implements Runnable {
         Files.write(path, byteArray, StandardOpenOption.APPEND);
     }
 
-    public void checkNullData() {
-        for (int j = 0; j < queueSend.size(); j++) {
-            RecordsSent rcS = queueSend.peek();
-            if(rcS.data == null){
-                System.out.println(" nul;fdgsdgdsfg");
+
+
+    public void checkTranslation(RecordsSent rcS) throws IOException, InterruptedException {
+        try {
+            BinaryMessage binaryMessage = new BinaryMessage(rcS.getMsg());
+            //byte goc
+            byte[] goc = rcS.data;
+            //byte dich
+//                byte[] dich = binaryMessage.getBinaryMessage();
+
+            byte[] dich = new byte[rcS.data.length];
+            int t = binaryMessage.getSoLuongHeader();
+            for (int k = 0; k < t; k++) {
+                dich[k] = binaryMessage.getBinaryMessage()[k];
             }
+            for (int k = 0; k < binaryMessage.getHeader().length; k++) {
+                if (binaryMessage.getHeader()[k]) {
+                    System.arraycopy(binaryMessage.getBytes2D()[k], 0, dich, t, binaryMessage.getBytes2D()[k].length);
+                    t += binaryMessage.getBytes2D()[k].length;
+                }
+            }
+          
+            if (goc.length == dich.length) {
+                int dau = 0;
+                for (int z = 0; z < goc.length; z++) {
+                    if (goc[z] != dich[z]) {
+                        dau = 1;
+                        dichSai++;
+                        System.out.println("Dich sai content----------------------------------------------------" + dichSai);
+                        break;
+                    }
+                }
+                if (dau == 0) {
+                    dichDung++;
+                    System.out.println("True ------------------" + dichDung);
+                }
+            } else {
+                dichSai++;
+                System.out.println("Dich sai length " + dichSai);
+            }
+        } catch (Exception e) {
+
         }
-                
-                
-    }    
-    
-    public void gopGoiphatdivaxoa(int i) throws IOException, InterruptedException {
-//        try {
-            byte[] msg = new byte[len + 3];
-            msg[0] = 21;
-            msg[1] = (byte) (msg.length >> 8);
-            msg[2] = (byte) (msg.length & 0xFF);
-            int temp = 3;
-            checkNullData();
-            for (int j = 0; j < i; j++) {
-                countMessage++;
-//                RecordsSent rcS = queueSend.get(j);
-
-//                BinaryMessage binaryMessage = new BinaryMessage(rcS.getMsg());
-
-//                byte[] goc = rcS.data;
-////                byte[] dich = binaryMessage.getBinaryMessage();
-//                byte[] dich = new byte[rcS.data.length];
-//                int t = binaryMessage.getSoLuongHeader();
-//                for(int k = 0; k < t; k++){
-//                    dich[k] = binaryMessage.getBinaryMessage()[k];
-//                }
-//                for(int k = 0; k < binaryMessage.getHeader().length; k++){
-//                    if(binaryMessage.getHeader()[k]){
-//                        System.arraycopy(binaryMessage.getBytes2D()[k], 0, dich, t, binaryMessage.getBytes2D()[k].length);
-//                        t+=binaryMessage.getBytes2D()[k].length;
-//                    }
-//                }
-//                if (goc.length == dich.length) {
-//                    int dau = 0;
-//                    for (int z = 0; z < goc.length; z++) {
-//                        if (goc[i] != dich[i]) {
-//                            dau = 1;
-//                            dichSai++;
-//                            System.out.println("Dich sai content----------------------------------------------------" + dichSai);
-//                            break;
-//                        }
-//
-//                    }
-//                    if (dau == 0) {
-//                        dichDung++;
-//                        System.out.println("True ------------------" +dichDung);
-//                    }
-//                } else {
-//                    dichSai++;
-//                    System.out.println("Dich sai length " + dichSai);
-//                }
-//                
-//                int lengTemp = rcS.data.length;
-//                System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
-//                temp += lengTemp;
-            }
-
-//            udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
-            udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
-
-            for (int j = 0; j < i; j++) {
-                queueSend.remove(0);
-            }
-//        } 
-//        catch (Exception e) {
-//            System.err.println("error : " + e.getMessage());
-//        }
-
-        len = 0;
 
     }
-    
-    public void layindexcuoicanphat1() throws InterruptedException {
-        RecordsSent rcS = queueSend.take();
-        if (rcS.data == null) {
-            System.out.println(" nul;fdgsdgdsfg");
-        } else {
-            System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Data length = " + Integer.toString(rcS.data.length));
+
+    public void checkNull() throws InterruptedException {
+        for (RecordsSent rcS : queueSend) {
+            if (rcS.data == null) {
+                System.out.println(" nul;fdgsdgdsfg");
+            } else {
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Data length = " + Integer.toString(rcS.data.length));
+            }
         }
+//        RecordsSent rcS = queueSend.take();
         
-        /*
-        int j = queueSend.size();
-        for (int i = 0; i < j ; i++) {
-            RecordsSent rcS = queueSend.get(i);
-            if(rcS.data == null){
-                System.out.println(" nul;fdgsdgdsfg");
-            }
-        }
-        for (int i = 0; i < j ; i++) {
-            queueSend.remove(0);
-        }
-        */
     }
 
-    
-    
-    
     public void send() throws InterruptedException, IOException {
         List<Byte> list = new ArrayList<>();
         int temp = 3;
-        
-        while(temp < MAX_BYTE_INPACKET - 200){
+        while (temp < MAX_BYTE_INPACKET - 200) {
             RecordsSent rcS = queueSend.take();
+            checkTranslation(rcS);
             countMessage++;
+            System.out.println(" So luong messages: "+countMessage);
             int lengTemp = rcS.data.length;
-            for(int i = 0; i < lengTemp; i++){
+            for (int i = 0; i < lengTemp; i++) {
                 list.add(rcS.data[i]);
             }
-            
-//            System.arraycopy(rcS.data, 0, msg, temp, lengTemp);
             temp += lengTemp;
         }
         byte[] msg = new byte[temp];
         msg[0] = 21;
         msg[1] = (byte) (msg.length >> 8);
         msg[2] = (byte) (msg.length & 0xFF);
-        for(int i = 3; i < list.size(); i++){
-            msg[i] = list.get(i-3);
+        for (int i = 3; i < list.size(); i++) {
+            msg[i] = list.get(i - 3);
         }
-        udpSend.sendUDPPacket(msg, "192.168.22.174", 20552);
-//        int i = 0;
-//        for(RecordsSent rcS : queueSend){
-//            len += rcS.data.length;
-//            i++;
-//            if(len >= MAX_BYTE_INPACKET - 100) {
-//                break;
-//            }
-//        }
-        
-        // XEM LAIJ
-        //len -= queueSend.get(i).data.length;
-        //  i = la phan tu cuoi can gop
-
-//        System.out.println("i = " + Integer.toString(i) + " Len " + Integer.toString(len));
-
-        //lay 1 phan tu ra
-        //        xem do dai da qua MAX
-        //                chua get tiep xem qua MAX Chaw
-
-        /*
-        System.out.println("Phat hien co " + Integer.toString(queueSend.size()) + " Records can phat di");
-        RecordsSent rs = get(0);
-
-        try {
-            byte[] cat21 = buildCat21single(rs.data);
-            udpSend.sendUDPPacket(cat21, "192.168.22.170", 20552);
-            System.out.println("Thread SendData is running from the Runnable interface........................... after poll " + Integer.toString(queueSend.size())
-                    + " Record size " + Integer.toString(rs.data.length));
-        } catch (IOException ex) {
-            Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-        }
-         */
+        udpSend.sendUDPPacket(msg, "192.168.22.158", 20552);
     }
 
-    
-    
-    
     @Override
 
     public void run() {
 
         while (true) {
 
-//            System.out.println("DOAN NAY DUNG SE CONVERT VA PHAT CHO CLIENT");
+            
             int sz = queueSend.size();
-            if (sz > 30) {
+//            System.out.println("queue size = "+sz);
+            if (sz > 3) {
                 try {
-                    layindexcuoicanphat1();
-//                    send();
-//                try {
-//                    gopGoiphatdivaxoa(count);
-//
-//                    // int version = rs.getVerion();
-//                    // byte[] _data = rs.data;
-//                } catch (IOException ex) {
-//                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-//                } catch (InterruptedException ex) {
-//                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-    } catch (InterruptedException ex) {
-        Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
-    }
+//                    checkNull();
+                    send();
+                
+
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(SendData.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
 
             try {

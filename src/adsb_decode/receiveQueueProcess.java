@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,17 +27,19 @@ import java.util.logging.Logger;
  * @author tranduc
  */
 public class receiveQueueProcess implements Runnable {
-    Queue<byte[]> queueRecceive = new LinkedList<>();
+    BlockingQueue<byte[]> queueRecceive;// = new LinkedBlockingDeque<>();
     
-    final List<Cat21Message> messages = new ArrayList<>();
+    final List<Cat21Message> messages;// = new ArrayList<>();
 //    static List<RecordsSent> queueSend = new ArrayList<>();
-    BlockingQueue<RecordsSent> queueSend = null;
-    List<RecordsSent> recordssentList = new ArrayList<>();
+    BlockingQueue<RecordsSent> queueSend;// = null;
+    List<RecordsSent> recordsSentList;// = new ArrayList<>();
               
     
-    public receiveQueueProcess(Queue<byte[]> q, BlockingQueue<RecordsSent> qs, List<RecordsSent> recordssentList) {
+    public receiveQueueProcess(BlockingQueue<byte[]> q, BlockingQueue<RecordsSent> qs, List<RecordsSent> recordsSentList) {
         queueRecceive = q;
         queueSend = qs;
+        messages = new ArrayList<>();
+        this.recordsSentList = recordsSentList;
     }
     
     // Kiem tra xem record data da co trong list chua
@@ -44,24 +47,24 @@ public class receiveQueueProcess implements Runnable {
         boolean found = false;
         
         // Xoa nhung cai da cu di truoc
-        for(int i = 0 ; i < recordssentList.size() ; i ++) {
-            long start = recordssentList.get(i).startTime;
+        for(int i = 0 ; i < recordsSentList.size() ; i ++) {
+            long start = recordsSentList.get(i).startTime;
             long endTime = System.nanoTime()/1000;
             long elapsedTime = endTime - start;
             if( elapsedTime > 15000000 ) {
-                recordssentList.remove(i);
+                recordsSentList.remove(i);
                 System.out.println("REMOVE==========================================================================================================");
             } 
         }
         
         // Kiem tra
         // Can loai bo SIC/SAC
-        for(int i = 0 ; i < recordssentList.size() ; i ++) {
-            RecordsSent rcs = recordssentList.get(i);
-            byte[] pos = rcs.pos;
-            byte[] poshisres = rcs.poshires;
-            byte[] dt = rcs.data;
-            found = Arrays.equals(data, recordssentList.get(i).data);
+        for(int i = 0 ; i < recordsSentList.size() ; i ++) {
+            RecordsSent rcs = recordsSentList.get(i);
+//            byte[] pos = rcs.pos;
+//            byte[] poshisres = rcs.poshires;
+//            byte[] dt = rcs.data;
+            found = Arrays.equals(data, recordsSentList.get(i).data);
             if(found)
                 break;
         }
@@ -92,7 +95,7 @@ public class receiveQueueProcess implements Runnable {
         double lat = value * 0.00000016764;
         
         value = ((bytes[index++] & 0xFF) << 24) | ((bytes[index++] & 0xFF) << 16) | ((bytes[index++] & 0xFF) << 8) | (bytes[index++] & 0xFF);
-        double lon = value * 0.0000001676;
+        double lon = value * 0.00000016764;
     
     }
     //-------------------------------------------------------
@@ -100,7 +103,7 @@ public class receiveQueueProcess implements Runnable {
     //
     //
     //------------------------------------------------------- 
-    public  void ProcessMessage() {
+    public  void ProcessMessage() throws InterruptedException {
 
         //recordssentList.clear();
         System.out.println("++++++> Xy ly dien trong queue so messages=" + Integer.toString(messages.size()));
@@ -121,14 +124,16 @@ public class receiveQueueProcess implements Runnable {
             testPos(pos);
             testPoshi(poshires);
 
-            System.out.println("Kiem tra xem data co duoc phat di khong " + Integer.toString(data.length) + ", Kiem tra co trong Records da phat " + Integer.toString(recordssentList.size()));
+            System.out.println("Kiem tra xem data co duoc phat di khong " + Integer.toString(data.length) + ", Kiem tra co trong Records da phat " + Integer.toString(recordsSentList.size()));
             // Neu chua co trong list
+             
             if (!TestDataSentInList(data)) {
                 System.out.println("CHUA CO NEN SEND TO CLIENT");
                 rcs.add_data(cat21Decoded);
                 rcs.setVerion(3);
-                recordssentList.add(rcs);
-                queueSend.add(rcs);
+                recordsSentList.add(rcs);
+                queueSend.put(rcs);
+                System.out.println("put to queue send");
             } else {
                 String tmp = rcs.Callsign  + " -> DA CO NEN KHONG SEND TO CLIENT ";
                 WireToFile(tmp + "\r\n");
@@ -162,11 +167,20 @@ public class receiveQueueProcess implements Runnable {
                 System.out.println("=====> Receiver queue has elements : " + Integer.toString(queueRecceive.size()));
                 while(!queueRecceive.isEmpty()) {
                     //messages.clear();
-                    byte[] data = queueRecceive.poll();
+                    byte[] data = null;
+                    try {
+                        data = queueRecceive.take();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(receiveQueueProcess.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                     System.out.println("%%%%%%> Byte data length = " + Integer.toString(data.length));
-                     messages.clear();
+                    messages.clear();
                     int aaa = Cat21Decoder.decode1(data, messages);
-                    ProcessMessage();
+                    try {
+                        ProcessMessage();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(receiveQueueProcess.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             } else {
                 //int aaa = Cat21Decoder.decode1(asterixData, messages);
